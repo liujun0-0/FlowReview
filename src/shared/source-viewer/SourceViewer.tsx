@@ -22,6 +22,6 @@ class RenderBoundary extends Component<PropsWithChildren<{ viewer: SourceViewerP
 
 export function SourceViewer(props: SourceViewerProps) {
   const { Renderer } = useContext(AdapterContext);
-  const identity = [props.document.id, props.mode, props.extent, props.comparison, props.completeMethod, props.split].join(':');
+  const identity = JSON.stringify([props.document.id, props.view]);
   return <div className="fr-source-viewer"><RenderBoundary key={identity} viewer={props}><Renderer {...props} /></RenderBoundary></div>;
 }

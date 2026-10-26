@@ -7,17 +7,13 @@ export interface SourceText { text: string; status: string }
 export interface SourceDocument { id: string; path: string; before: SourceText; after: SourceText }
 export interface SourceAnnotation { id: string; line: number; side: SourceSide; content: ReactNode }
 export interface SourceTokenEvent { text: string; side: SourceSide; line: number }
+export type SourceViewRequest =
+  | { kind: 'source'; side: SourceSide; extent: 'file' | 'range'; range: SourceRange }
+  | { kind: 'diff'; scope: 'file'; display: 'file' | 'hunks'; focus: { side: SourceSide; line: number }; layout: 'split' | 'unified' }
+  | { kind: 'diff'; scope: 'method'; focusSide: SourceSide; oldRange: SourceRange | null; newRange: SourceRange | null; fallbackRange: SourceRange; context: 'compact' | 'complete'; layout: 'split' | 'unified' };
 export interface SourceViewerProps {
   document: SourceDocument;
-  mode: SourceSide | 'diff';
-  side: SourceSide;
-  extent: 'file' | 'range';
-  oldRange: SourceRange | null;
-  newRange: SourceRange | null;
-  fallbackRange: SourceRange;
-  comparison: 'file' | 'method' | 'none';
-  completeMethod: boolean;
-  split: boolean;
+  view: SourceViewRequest;
   theme: 'light' | 'dark';
   annotations?: SourceAnnotation[];
   fallbackHeader?: ReactNode;

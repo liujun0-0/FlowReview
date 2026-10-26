@@ -26,7 +26,7 @@ export interface Manifest {
   unknowns: { what: string; reason: string; how: string }[]; verifyPlan: { strategy: string; target: string; how: string; why: string }[];
 }
 export interface Mark { read?: boolean; question?: boolean; note?: string }
-export interface ReadingState { marks: Record<string, Mark>; position?: { flow?: string; node?: string }; updatedAt?: string }
+export interface ReadingState { revision?: number; marks: Record<string, Mark>; position?: { flow?: string; node?: string }; updatedAt?: string }
 
 export interface BusinessStep {
  id:string;title:string;project:string;layer:string;phase?:string;kind?:'start'|'process'|'decision'|'storage'|'external'|'end'|'failure';purpose:string;input:string;output:string;process:string;
