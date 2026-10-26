@@ -3,17 +3,13 @@ import { BusinessOverview } from './BusinessOverview';
 import { BusinessStepDetails } from './BusinessStepDetails';
 import { FlowGraph, STATUS_LABELS } from './FlowGraph';
 import { moduleStatus } from '../../../lib/review/flow-graph.js';
-import { methodDiff } from '../../../lib/review/method-diff.js';
 import { isTestSource } from '../../../lib/review/file-kind.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { CodeView, File, FileDiff, WorkerPoolContextProvider, type CodeViewHandle } from '@pierre/diffs/react';
-import { parseDiffFromFile, type DiffLineAnnotation } from '@pierre/diffs';
-import { DIFF_HIGHLIGHTER_OPTIONS, DIFF_WORKER_POOL_OPTIONS } from '../../shared/code/diffs';
+import { SourceViewer, SourceViewerProvider, type SourceAnnotation } from '../../shared/source-viewer';
 import { useTheme } from '../../shared/useTheme';
 import type { Annotation, Manifest, Mark, ReaderNode, ReadingState, SourceFile, Sources, SymbolInfo } from './types';
 import './reader.css';
 
-const READER_HIGHLIGHTER_OPTIONS = { ...DIFF_HIGHLIGHTER_OPTIONS, useTokenTransformer: true };
 const reportId = window.location.pathname.split('/')[2];
 const token = window.location.hash.slice(1);
 async function api<T>(path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST'): Promise<T> {
@@ -74,53 +70,34 @@ interface CodeProps {
   onToken: (text: string, side: 'old' | 'new', owner: string) => void; split: boolean;
 }
 function Code({ node, file, theme, mode, full, explain, completeMethod, onToken, split }: CodeProps) {
-  const { data, error } = useSource(file.id); const view = useRef<CodeViewHandle<undefined>>(null);
+  const { data, error } = useSource(file.id);
   const side = mode === 'old' ? 'old' : mode === 'new' ? 'new' : node.side;
   const range = side === 'old' ? node.oldRange : node.newRange;
-  const diff = useMemo(() => {
-    if (!data || mode !== 'diff' || node.relatedOnly || full) return null;
-    const before = node.oldRange ? slice(data.old.text, node.oldRange) : '';
-    const after = node.newRange ? slice(data.new.text, node.newRange) : '';
-    // A missing matching method on the opposite side must never look like a complete addition/deletion.
-    if (node.rangeKind === 'context') return normalized(data.old.text) === normalized(data.new.text) ? null : parseDiffFromFile({ name: file.path, contents: normalized(data.old.text) }, { name: file.path, contents: normalized(data.new.text) });
-    if ((!node.oldRange && data.old.status === 'text' && !node.annotations.every(a => a.type === '新增')) || (!node.newRange && data.new.status === 'text' && !node.annotations.every(a => a.type === '删除'))) return null;
-    if (before === after || (!before && !after)) return null;
-    return methodDiff(file.path, data.old.text, data.new.text, node.oldRange, node.newRange, completeMethod, `${reportId}:${file.id}:${node.id}:${completeMethod}`);
-  }, [data, mode, node, file, full, completeMethod]);
-  const annotations = useMemo<DiffLineAnnotation<Annotation[]>[]>(() => {
-    if (!diff || !explain) return [];
-    const groups = new Map<string, DiffLineAnnotation<Annotation[]>>();
-    for (const a of node.annotations) {
-      const s = a.side === 'old' || a.type === '删除' ? 'deletions' : 'additions';
-      if (!diff.hunks.some(h => { const start = s === 'additions' ? h.additionStart : h.deletionStart; const count = s === 'additions' ? h.additionCount : h.deletionCount; return a.line >= start && a.line < start + count; })) continue;
-      const key = `${s}:${a.line}`; const group = groups.get(key) || { side: s, lineNumber: a.line, metadata: [] };
-      group.metadata!.push(a); groups.set(key, group);
-    }
-    return [...groups.values()];
-  }, [diff, node.annotations, explain]);
-  const options = useMemo(() => ({ theme: { dark: 'pierre-dark', light: 'pierre-light' } as const, themeType: theme, disableFileHeader: true, overflow: 'wrap' as const, useTokenTransformer: true,
-    onTokenClick: (event: { tokenText: string; side?: string }) => onToken(event.tokenText, event.side === 'deletions' ? 'old' : event.side === 'additions' ? 'new' : side, node.id),
-  }), [theme, onToken, side, node.id]);
-  useEffect(() => {
-    if (!data || !full) return;
-    const timer = setTimeout(() => view.current?.scrollTo({ type: 'line', id: file.id, lineNumber: range?.[0] || node.range[0], align: 'center' }), 150);
-    return () => clearTimeout(timer);
-  }, [data, full, range, file.id, node.range]);
   if (error) return <p className="rr-error" role="alert">{error}</p>;
   if (!data) return <p className="rr-loading">读取固定源码快照…</p>;
   if (data[side].status === 'missing' && mode !== 'diff') return <p className="rr-context-label">{side === 'old' ? '新增文件，没有修改前源码。' : '已删除文件，没有修改后源码。'}</p>;
   if (!['text', 'missing'].includes(data[side].status)) return <p className="rr-warning">该版本为 {data[side].status}，未作为可读文本展示。</p>;
-    if (full) {
-    if (mode === 'diff' && normalized(data.old.text) !== normalized(data.new.text) && [data.old.status, data.new.status].every(s => ['text', 'missing'].includes(s))) return <CodeView className="rr-full-code" ref={view} key={`${file.id}:diff`} items={[{ id: file.id, type: 'diff', fileDiff: parseDiffFromFile({ name: file.path, contents: normalized(data.old.text) }, { name: file.path, contents: normalized(data.new.text) }) }]} options={{ ...options, diffStyle: split ? 'split' : 'unified', layout: { paddingTop: 4, paddingBottom: 12, gap: 0 } }} />;
-    return <CodeView className="rr-full-code" ref={view} key={`${file.id}:${side}`} items={[{ id: file.id, type: 'file', file: { name: file.path, contents: data[side].text, cacheKey: `${file.id}:${side}` } }]} options={{ ...options, layout: { paddingTop: 4, paddingBottom: 12, gap: 0 } }} />;
+  const before = node.oldRange ? slice(data.old.text, node.oldRange) : '';
+  const after = node.newRange ? slice(data.new.text, node.newRange) : '';
+  const sameMethod = !!node.oldRange && !!node.newRange && before === after;
+  const matchingSides = !((!node.oldRange && data.old.status === 'text' && !node.annotations.every(a => a.type === '新增')) || (!node.newRange && data.new.status === 'text' && !node.annotations.every(a => a.type === '删除')));
+  const readableSides = [data.old.status, data.new.status].every(status => ['text', 'missing'].includes(status));
+  const comparison = full ? readableSides ? 'file' : 'none' : node.relatedOnly ? 'none' : node.rangeKind === 'context' ? 'file' : matchingSides && !sameMethod && (before || after) ? 'method' : 'none';
+  const actualRange = range || node.range;
+  const groups = new Map<string, { side: 'old' | 'new'; line: number; values: Annotation[] }>();
+  if (explain) for (const value of node.annotations) {
+    const annotationSide = value.side === 'old' || value.type === '删除' ? 'old' : 'new';
+    const key = `${annotationSide}:${value.line}`;
+    const group = groups.get(key) || { side: annotationSide, line: value.line, values: [] };
+    group.values.push(value); groups.set(key, group);
   }
-  if (diff) return <FileDiff fileDiff={diff} options={{ ...options, diffStyle: split ? 'split' : 'unified', hunkSeparators: 'line-info' }} lineAnnotations={annotations} renderAnnotation={a => <Explanation values={a.metadata || []} original={node.relatedOnly || node.changeStatus === 'unchanged'} />} />;
-  // Retain the true global line numbers in the mature renderer; no hand-renumbered source snippets.
-  const source = data[side];
-  const lines = source.text.split('\n'); const actualRange = range || node.range;
-  const clipped = lines.slice(Math.max(0, actualRange[0] - 1), actualRange[1]).join('\n');
-  const sameMethod = node.oldRange && node.newRange && slice(data.old.text, node.oldRange) === slice(data.new.text, node.newRange);
-  return <><div className="rr-context-label">{node.rangeKind === 'context' ? '定位附近上下文（未识别为完整方法）' : node.relatedOnly ? '原有代码，本次没有修改' : sameMethod ? '两侧这段源码一致，请核对报告中的改动说明' : '没有唯一定位到两侧对应方法，先展示指定侧源码'} · 实际 L{actualRange[0]}–{actualRange[1]}；下方行号为片段内行号</div><File file={{ name: file.path, contents: clipped, cacheKey: `${node.id}:${side}` }} options={options} />{explain && <Explanation values={node.annotations} original={node.relatedOnly || node.changeStatus === 'unchanged'} />}</>;
+  const annotations: SourceAnnotation[] = [...groups].map(([id, group]) => ({ id, line: group.line, side: group.side, content: <Explanation values={group.values} original={node.relatedOnly || node.changeStatus === 'unchanged'} /> }));
+  return <SourceViewer document={{ id: `${reportId}:${file.id}:${node.id}:${completeMethod}`, path: file.path, before: data.old, after: data.new }}
+    mode={mode} side={side} extent={full ? 'file' : 'range'} comparison={comparison} theme={theme} split={split} completeMethod={completeMethod}
+    oldRange={node.oldRange} newRange={node.newRange} fallbackRange={node.range} annotations={annotations}
+    onTokenClick={event => onToken(event.text, event.side, node.id)}
+    fallbackHeader={<div className="rr-context-label">{node.rangeKind === 'context' ? '定位附近上下文（未识别为完整方法）' : node.relatedOnly ? '原有代码，本次没有修改' : sameMethod ? '两侧这段源码一致，请核对报告中的改动说明' : '没有唯一定位到两侧对应方法，先展示指定侧源码'} · 实际 L{actualRange[0]}–{actualRange[1]}；下方行号为片段内行号</div>}
+    fallbackFooter={explain && <Explanation values={node.annotations} original={node.relatedOnly || node.changeStatus === 'unchanged'} />} />;
 }
 
 function AddedFileCard({ file, nodes, theme, mode, explain, split, onToken, onOpen, reading, onMark, peek, onClosePeek, onOpenCandidate }: {
@@ -244,7 +221,7 @@ export function ReviewReader() {
       })}
       {!full && !visible.length && <p>{hiddenCount || (hideTests && syntheticFile && isTestSource(syntheticFile.path)) ? '当前内容已被测试过滤器隐藏，点击“显示全部”恢复。' : nav === 'flow' ? '该功能尚未关联实现代码，请核对需求覆盖情况。' : '当前没有可展示的阅读节点。'}</p>}
       <footer className="rr-bottom"><span>{saveStatus || '看过不等于实现正确；验证结果为原报告提供的记录。'}</span><details><summary>尚待核对与行为验证建议</summary>{manifest.unknowns.map((u, i) => <p key={i}>{u.what}：{u.reason}；{u.how}</p>)}{manifest.verifyPlan.map((v, i) => <p key={i}>{v.target} · {v.strategy}：{v.how}</p>)}</details></footer></>;
-  return <WorkerPoolContextProvider poolOptions={DIFF_WORKER_POOL_OPTIONS} highlighterOptions={READER_HIGHLIGHTER_OPTIONS}><div className={`reader ${panelOpen ? 'rr-has-code' : ''} ${nav !== 'flow' ? 'rr-source-mode' : ''}`}>
+  return <SourceViewerProvider><div className={`reader ${panelOpen ? 'rr-has-code' : ''} ${nav !== 'flow' ? 'rr-source-mode' : ''}`}>
     <header className="rr-top"><div><h1><span className="rr-brand">FlowReview</span>{manifest.title}</h1><small>固定源码快照 · {new Date(manifest.createdAt).toLocaleString()} · {Object.keys(manifest.files).length} 个文件 / {Object.keys(manifest.nodes).length} 个阅读节点</small></div><div className="rr-actions"><span>{marks.filter(m => m.read).length} 处看过 · {questionIds.length} 处疑问</span><button onClick={theme.cycleTheme}>主题：{{ auto: '跟随系统', light: '浅色', dark: '深色' }[theme.mode]}</button><button onClick={async () => { await saveQueue.current; try { await api('stop', {}); setStopped(true); } catch (e) { setNotice(String(e)); } }}>停止本地服务</button></div></header>
     <aside className="rr-sidebar"><div className="rr-navtabs"><button aria-pressed={nav === 'flow'} onClick={() => { setNav('flow'); setFull(undefined); }}>功能链</button><button aria-pressed={nav === 'file'} onClick={() => { setNav('file'); setFull(undefined); }}>文件</button><button aria-pressed={nav === 'questions'} onClick={() => { setNav('questions'); setFull(undefined); }}>我的疑问 {questionIds.length}</button></div>
       {nav === 'flow' ? manifest.flows.map(f => <button key={f.id} className={`rr-navitem ${f.id === flowId ? 'active' : ''}`} onClick={() => { setFlowId(f.id); setBusinessStepId(''); setModuleId(''); setShowAllCode(false); setSelected(''); setFull(undefined); main.current?.scrollTo({ top: 0 }); }}><b>{f.title}</b><small>{unique(f.chains.flatMap(c => c.nodeIds)).filter(id => !hideTests || !isTestNode(id)).length} / {unique(f.chains.flatMap(c => c.nodeIds)).length} 个阅读节点 · {f.status}</small></button>) : nav === 'file' ? <><input aria-label="查找文件" placeholder="查找文件或项目" value={search} onChange={e => setSearch(e.target.value)} />{files.map(file => <button className={`rr-navitem ${(fileNode && fileNode.fileId === file.id) || syntheticFile?.id === file.id ? 'active' : ''}`} key={file.id} onClick={() => { setSelected(file.nodeIds[0] || `file:${file.id}`); setFull(undefined); }}><b>{file.path}</b>{isTestSource(file.path) && <span className="rr-test-tag">测试代码</span>}<small>{file.project} · {file.changed ? '有文件变化' : '原有文件'} · {file.nodeIds.length ? '已关联说明' : '未归入功能链，仍需查看'}</small></button>)}</> : <>{questionIds.filter(id => !hideTests || !isTestNode(id)).map(id => <button key={id} className="rr-navitem" onClick={() => navigate(id)}>{manifest.nodes[id].title}<small>{reading.marks[id].note || '尚未填写问题内容'}</small></button>)}{!questionIds.length && <p>在代码旁点击“记个疑问”，可集中回顾。</p>}</>}
@@ -259,5 +236,5 @@ export function ReviewReader() {
 
     </main>
     {panelOpen && <aside className="rr-code-panel" ref={codePane} aria-label="源码侧栏"><header className="rr-code-panel-header"><strong>{full ? '完整文件' : selectedMethod ? selectedMethod.title + '()' : activeStep ? activeStep.title : '源码与变化'}</strong><button onClick={() => { setFull(undefined); setBusinessStepId(''); setModuleId(''); setSelected(''); setShowAllCode(false); setPeek(undefined); setNav('flow'); }}>关闭源码</button></header>{sourceContent}</aside>}
-  </div></WorkerPoolContextProvider>;
+  </div></SourceViewerProvider>;
 }

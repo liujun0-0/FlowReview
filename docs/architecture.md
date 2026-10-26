@@ -28,3 +28,13 @@ npm run dev 启动 FlowReview 前端开发首页，默认仅监听本机。它�
 类型检查和正式构建通过；新旧 CLI 帮助及 Git 适配器验证；既有阅读器回归、skill 安装测试通过；浏览器核对首页和真实报告的流程与源码侧栏；分发清单包含共享/兼容实现及来源说明。
 
 后续在独立任务中拆分超大阅读器组件、服务与图模型，不与这轮目录迁移混做。来源及版权依据见 ../UPSTREAM.md。
+
+## 源码查看器边界
+
+评审业务只使用 src/shared/source-viewer 的公开 SourceViewer、SourceViewerProvider 与自有 types。输入为修改前后源码、原始范围、显示模式、主题和 ReactNode 说明；点击返回 text/old或new侧/原始快照行号。业务层保留取码权限、版本状态、方法配对是否可靠、关系检索与跳转决策，不交给渲染器推测。
+
+默认 PierreRenderer 位于 adapters/pierre，内部处理第三方类型、行内说明位置、Worker、高亮与虚拟滚动。方法差异解析位于 lib/source-viewer/pierre，只有适配层及其专项测试使用返回的库专用结构。原版兼容界面也使用该适配层的配置，但暂不重写其独立交互。
+
+SourceViewerProvider 可接受自有 SourceRendererAdapter（Renderer 与可选 Provider），替换引擎时更改 adapters/default.ts 的选择或传入适配器，不需把库专用对象传入业务组件。原版 legacy 查看器仍直接使用 Pierre，不代表整个项目可以立即卸载该依赖。PlainTextRenderer 可作为独立适配器，也用于同步渲染错误时的降级；明确不具备语法高亮、精确差异和标识符跳转。React 边界不保证捕获异步 Worker 或事件回调中的所有错误。
+
+完整源码自动定位及片段点击行号由适配器映射；片段原始范围不变。当前视觉行号仍可能是片段内编号，点击事件统一使用原始快照坐标。未来引擎不具备的能力必须明确呈现，不能制造等价行为。协议由类型检查、同一份数据换用纯文本适配器的渲染测试、坐标及依赖边界检查保护。

@@ -56,7 +56,7 @@
     "build": "vite build",
     "prepack": "npm run build",
     "review": "node ./bin/flowreview.js",
-    "test:review": "node --test test/review.test.js test/method-diff.test.js test/flow-graph.test.js test/method-metadata.test.js test/flow-layout.test.js test/business-flow.test.js test/sequence-model.test.js test/sequence-canvas.test.js test/elk-layout.test.js test/entrypoints.test.js",
+    "test:review": "node --test test/review.test.js test/method-diff.test.js test/flow-graph.test.js test/method-metadata.test.js test/flow-layout.test.js test/business-flow.test.js test/sequence-model.test.js test/sequence-canvas.test.js test/elk-layout.test.js test/entrypoints.test.js test/source-viewer.test.js",
     "test:skill": "python -B test/test_skill_install.py",
     "dev:legacy": "node ./bin/yadiff.js --dev"
   },

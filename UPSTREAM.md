@@ -11,7 +11,7 @@ FlowReview 是功能链代码评审产品，基于 yadiff 的代码起步，并�
 
 ## 提取的共享能力
 
-src/shared/useTheme.ts、preferences.ts、theme.css 和 code/diffs.ts 由上游主题、偏好、基础样式与高亮/worker 配置提取并适配。保留 yd-* CSS 变量、yadiff:preferences 等存储名称以兼容已有数据，不视为产品入口或项目身份。
+src/shared/useTheme.ts、preferences.ts、theme.css 和 source-viewer/adapters/pierre/config.ts 由上游主题、偏好、基础样式与高亮/worker 配置提取并适配。保留 yd-* CSS 变量、yadiff:preferences 等存储名称以兼容已有数据，不视为产品入口或项目身份。
 
 ## FlowReview 的实现
 
@@ -22,3 +22,5 @@ bin/flowreview.js 是正式入口。bin/yadiff-review.js 与 bin/yadiff.js 只�
 同步上游时记录来源提交，优先局部迁移到兼容目录，人工核对共享模块改动，不对整个项目自动覆盖。代码移动与功能改动尽量分别核对；路径与行为差异通过 Git diff -M、测试及浏览器回归检查。
 
 第三方渲染、布局和解析组件另见 THIRD-PARTY-LICENSES 与 docs/licensing.md。目录归属用于说明维护边界，不替代各文件实际来源和许可证。
+
+源码展示的业务无关接口位于 src/shared/source-viewer；Pierre 专用差异处理位于 lib/source-viewer/pierre，替换引擎不改变上游及第三方许可义务。

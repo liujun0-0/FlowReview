@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { methodDiff } from '../lib/review/method-diff.js';
+import { methodDiff } from '../lib/source-viewer/pierre/method-diff.js';
 import { iterateOverDiff } from '../node_modules/@pierre/diffs/dist/utils/iterateOverDiff.js';
 
 function validate(diff, oldText, newText) {

@@ -1,4 +1,4 @@
-export { REVIEW_UNSAFE_CSS, DIFF_WORKER_POOL_OPTIONS, DIFF_HIGHLIGHTER_OPTIONS } from '../../shared/code/diffs';
+export { REVIEW_UNSAFE_CSS, DIFF_WORKER_POOL_OPTIONS, DIFF_HIGHLIGHTER_OPTIONS } from '../../shared/source-viewer/adapters/pierre/config';
 
 export const SHORTCUTS: [string, string][] = [
     ['T', 'Tree search'],
