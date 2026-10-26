@@ -1,6 +1,6 @@
-# custom 分支：按功能链阅读本地代码变更
+# FlowReview：按功能链阅读本地代码变更
 
-此分支保留 yadiff 原来的 Git/jj/PR 用法，并新增独立的本地功能链阅读入口。
+FlowReview 基于 [yadiff](https://github.com/baggiiiie/yadiff)，保留原来的 Git/jj/PR 用法，并新增独立的本地功能链阅读入口。
 
 ## 安装一次
 
@@ -16,7 +16,7 @@ npm run build
 ## 生成并阅读
 
 ```powershell
-node bin/yadiff-review.js --review D:\workspace2\docs\feature\review\review.json
+node bin/flowreview.js --review D:\workspace2\docs\feature\review\review.json
 ```
 
 Windows 可以把 review.json 拖到 `open-review.cmd`。报告必须提供 repositories（项目名、Git 根目录、比较模式），支持现有 code-change-review 的 JSON；工作区模式覆盖暂存、未暂存和未跟踪文件，忽略 Git ignore 文件。
@@ -27,18 +27,18 @@ Windows 可以把 review.json 拖到 `open-review.cmd`。报告必须提供 repo
 
 ```powershell
 # 仅生成源码数据，不启动浏览器
-node bin/yadiff-review.js --review review.json --out D:\reports\task-20261016 --build-only
+node bin/flowreview.js --review review.json --out D:\reports\task-20261016 --build-only
 # 再次打开已有快照，不重新访问业务仓库
-node bin/yadiff-review.js --snapshot D:\reports\task-20261016
+node bin/flowreview.js --snapshot D:\reports\task-20261016
 # 前台运行或仅打印地址
-node bin/yadiff-review.js --snapshot D:\reports\task-20261016 --foreground --no-open
+node bin/flowreview.js --snapshot D:\reports\task-20261016 --foreground --no-open
 # 停止本工具的共享服务
-node bin/yadiff-review.js --stop
+node bin/flowreview.js --stop
 ```
 
 本地服务只监听 127.0.0.1。已有服务会复用，可同时注册多份快照。默认端口 5188 被占用时自动选择空闲端口；不会终止其他进程。没有页面请求或心跳五分钟后退出，也可点击“停止本地服务”。浏览器被系统长期冻结后可能需要重新运行启动器。
 
-运行信息默认保存在 `%USERPROFILE%\.yadiff-review`，阅读进度按源码和报告指纹独立保存，不写业务代码。可通过 `YADIFF_REVIEW_RUNTIME` 更改位置。
+运行信息默认保存在 `%USERPROFILE%\.yadiff-review`，阅读进度按源码和报告指纹独立保存，不写业务代码。可通过 `FLOWREVIEW_RUNTIME` 更改位置，兼容 `YADIFF_REVIEW_RUNTIME`。
 
 ## 阅读方式
 
@@ -95,3 +95,7 @@ npm run build
 
 SequenceView.tsx 使用库的节点、端口、视口与交互；lib/review/elk-layout.js 将实际尺寸、流程端口及关系映射到 ELK，返回节点位置和正交路径。拖动或节点尺寸变化后，缓存路径失效，由 React Flow 更新连线；自动排列重新计算避让。现有 JSON、manifest、源码快照与侧栏协议不变。布局不是运行时调用证据。
 
+
+## 名称与兼容性
+
+项目仓库：https://github.com/liujun0-0/FlowReview 。本地安装目录可以保留旧名称，无需移动；已有 skill 和快照路径继续有效。推荐 `npm run review -- --review <review.json>` 或 `node bin/flowreview.js`，安装本地包后可使用 `flowreview` 命令。旧 `yadiff`、`yadiff-review` 入口保留。当前包未发布到 npm，不要用 npm registry 安装命令冒充本分支。运行注册、主题和阅读进度保留原存储位置，避免改名丢失状态。上游作者及许可证声明保留。

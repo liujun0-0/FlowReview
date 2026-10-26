@@ -1,10 +1,24 @@
-# yadiff, yet another diff viewer
+# FlowReview · 功能链代码评审
 
-## custom 分支：功能链代码阅读器
+沿完整业务流程理解代码和变化：方法框内展示执行过程，引用连接目标方法或对象，点击后在侧栏阅读完整源码、真实差异与修改说明。
 
-首次运行 `npm ci`、`npm run build`，之后用 `node bin/yadiff-review.js --review <review.json>` 打开 code-change-review 报告，或将 JSON 拖到 `open-review.cmd`。支持完整源码快照、沿功能链连续阅读、代码旁说明、定义候选预览和独立保存的阅读进度。
+## 本地使用
 
-已有服务随用随启并自动复用；运行时不重新安装依赖，不需要 IDEA/VS Code 插件。详见 [本地安装和使用说明](docs/custom-reader.md)。原有 yadiff 用法保留。
+```powershell
+npm ci
+npm run build
+npm run review -- --review <review.json>
+# 或使用已有快照
+node bin/flowreview.js --snapshot <snapshot-directory>
+```
+
+Windows 可将 JSON 拖到 `open-review.cmd`。依赖安装一次，之后随用随启；源码固定为本地快照，阅读进度独立保存。详见 [安装和使用说明](docs/custom-reader.md)。当前改名后的包尚未发布 npm。
+
+支持方法流程画布、分支与循环说明、变更状态、对象引用、源码侧栏和测试代码过滤。旧 `yadiff` / `yadiff-review` 命令与已有 skill 启动脚本继续兼容。
+
+## 来源与上游用法
+
+基于 [baggiiiie/yadiff](https://github.com/baggiiiie/yadiff) 开发，保留作者署名、MIT 许可证及第三方许可证。以下为上游工具说明；其中 npm 命令安装的是原版 yadiff，并非 FlowReview。
 
 <img src="assets/screenshot.png" alt="screenshot" width="800" />
 

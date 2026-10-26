@@ -1,18 +1,18 @@
 {
-  "name": "@baggiiiie/yadiff",
+  "name": "@liujun0-0/flowreview",
   "version": "0.0.3-dev.0",
   "type": "module",
-  "description": "Yet another diff viewer — browser UI for local git/jj diffs and public GitHub pull requests.",
+  "description": "Read code changes along complete functional flows, with method graphs, source snapshots and review explanations.",
   "license": "MIT",
   "author": "baggiiiie",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/baggiiiie/yadiff.git"
+    "url": "git+https://github.com/liujun0-0/FlowReview.git"
   },
   "bugs": {
-    "url": "https://github.com/baggiiiie/yadiff/issues"
+    "url": "https://github.com/liujun0-0/FlowReview/issues"
   },
-  "homepage": "https://github.com/baggiiiie/yadiff#readme",
+  "homepage": "https://github.com/liujun0-0/FlowReview#readme",
   "keywords": [
     "diff",
     "git",
@@ -23,6 +23,7 @@
     "cli"
   ],
   "bin": {
+    "flowreview": "./bin/flowreview.js",
     "yadiff": "./bin/yadiff.js",
     "yadiff-review": "./bin/yadiff-review.js"
   },
@@ -48,7 +49,7 @@
     "typecheck": "tsc --noEmit",
     "build": "vite build",
     "prepack": "npm run build",
-    "review": "node ./bin/yadiff-review.js",
+    "review": "node ./bin/flowreview.js",
     "test:review": "node --test test/review.test.js test/method-diff.test.js test/flow-graph.test.js test/method-metadata.test.js test/flow-layout.test.js test/business-flow.test.js test/sequence-model.test.js test/sequence-canvas.test.js test/elk-layout.test.js"
   },
   "dependencies": {

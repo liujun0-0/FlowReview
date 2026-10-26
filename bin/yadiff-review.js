@@ -10,7 +10,7 @@ import { createReviewApp } from '../lib/review/server.js';
 
 const self = fileURLToPath(import.meta.url);
 const root = resolve(dirname(self), '..');
-const runtimeRoot = process.env.YADIFF_REVIEW_RUNTIME || join(homedir(), '.yadiff-review');
+const runtimeRoot = process.env.FLOWREVIEW_RUNTIME || process.env.YADIFF_REVIEW_RUNTIME || join(homedir(), '.yadiff-review');
 const registry = join(runtimeRoot, `runtime-${createHash('sha256').update(root).digest('hex').slice(0, 12)}.json`);
 
 export function parseReviewArgs(argv) {
@@ -55,7 +55,7 @@ async function existing() {
 
 export async function reviewMain(argv = process.argv.slice(2)) {
   const args = parseReviewArgs(argv);
-  if (args.help) { console.log('yadiff-review --review review.json [--out 快照目录] [--build-only]\nyadiff-review --snapshot 快照目录 [--foreground] [--no-open] [--port 5188]\nyadiff-review --stop\n首次：npm ci && npm run build；之后直接启动，不重新安装依赖。'); return; }
+  if (args.help) { console.log('FlowReview — 功能链代码评审\nflowreview --review review.json [--out 快照目录] [--build-only]\nflowreview --snapshot 快照目录 [--foreground] [--no-open] [--port 5188]\nflowreview --stop\n首次：npm ci && npm run build；之后直接启动，不重新安装依赖。'); return; }
   let runtime = await existing();
   if (args.stop) { if (runtime) await request(runtime, 'stop', {}); console.log(runtime ? '已停止阅读器' : '阅读器未运行'); return; }
   let folder = args.snapshot;
@@ -66,7 +66,7 @@ export async function reviewMain(argv = process.argv.slice(2)) {
     if (args.buildOnly) return;
   }
   if (!folder || !existsSync(join(folder, 'manifest.json'))) throw new Error('请用 --review 指定报告，或 --snapshot 指定已生成的快照目录');
-  if (!existsSync(join(root, 'dist', 'index.html'))) throw new Error('前端尚未构建，请在 yadiff 目录执行 npm ci 和 npm run build');
+  if (!existsSync(join(root, 'dist', 'index.html'))) throw new Error('前端尚未构建，请在 FlowReview 安装目录执行 npm ci 和 npm run build');
   if (runtime) {
     const { id } = await request(runtime, 'register', { folder });
     const url = `http://127.0.0.1:${runtime.port}/review/${id}#${runtime.token}`;

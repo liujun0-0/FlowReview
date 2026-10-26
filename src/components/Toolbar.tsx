@@ -52,7 +52,7 @@ export function Toolbar({
     return (
         <header className="toolbar">
             <div className="titleBlock">
-                <div className="eyebrow">yadiff · {formatSource(response?.source)}</div>
+                <div className="eyebrow">FlowReview · {formatSource(response?.source)}</div>
                 <h1>{response?.repositoryName} <span>{response?.target}</span></h1>
                 {largeDiffLabel != null ? <div className="largeDiffBadge">{largeDiffLabel}</div> : null}
             </div>
