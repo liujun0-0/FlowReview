@@ -616,7 +616,10 @@ function formatBytes(bytes) {
   return `${mib.toFixed(mib >= 10 ? 1 : 2)} MB`;
 }
 
-main().catch((error) => {
+const entry = process.argv.includes('--review') || process.argv.includes('--snapshot')
+  ? () => import('./yadiff-review.js').then(({ reviewMain }) => reviewMain())
+  : main;
+entry().catch((error) => {
   const message = error instanceof Error ? error.message : String(error);
   if (isBackgroundServerProcess()) {
     notifyParent({ type: 'error', error: message });

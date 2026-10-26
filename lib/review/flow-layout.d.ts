@@ -1,0 +1,2 @@
+export interface GraphPosition {x:number;y:number;width:number;height:number}
+export function layoutMethodGraph(graph: {modules:{id:string;project:string;group?:string}[];edges:{from:string;to:string}[]},options?:{nodeWidth?:number;nodeHeight?:number;columnGap?:number;rowGap?:number}): {positions:Record<string,GraphPosition>;groups:{project:string;x:number;y:number;width:number;height:number}[];width:number;height:number};

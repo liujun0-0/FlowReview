@@ -34,3 +34,14 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
+
+Custom reader additions:
+java-parser 3.0.1 — Apache-2.0 — https://github.com/jhipster/prettier-java
+Chevrotain 11.x — Apache-2.0 — https://github.com/Chevrotain/chevrotain
+Full license texts are included in the installed packages.
+
+Flow renderer:
+@xyflow/react 12.12.0 — MIT — https://github.com/xyflow/xyflow
+Full notice: licenses/react-flow-MIT.txt (React Flow attribution retained in UI).
+elkjs 0.12.0 — Eclipse Public License 2.0 (EPL-2.0 option) — https://github.com/kieler/elkjs
+Full license: licenses/elkjs-EPL-2.0.md. Unmodified upstream layout engine is bundled locally; upstream source is available at the repository above and from the elkjs npm source distribution. No source-code changes were made to ELK.

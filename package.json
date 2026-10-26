@@ -23,14 +23,19 @@
     "cli"
   ],
   "bin": {
-    "yadiff": "./bin/yadiff.js"
+    "yadiff": "./bin/yadiff.js",
+    "yadiff-review": "./bin/yadiff-review.js"
   },
   "files": [
     "bin/",
     "lib/",
     "dist/",
     "THIRD-PARTY-LICENSES",
-    "README.md"
+    "licenses/",
+    "README.md",
+    "open-review.cmd",
+    "setup-review.cmd",
+    "docs/custom-reader.md"
   ],
   "engines": {
     "node": ">=18.13.0"
@@ -42,11 +47,16 @@
     "dev": "node ./bin/yadiff.js --dev",
     "typecheck": "tsc --noEmit",
     "build": "vite build",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "review": "node ./bin/yadiff-review.js",
+    "test:review": "node --test test/review.test.js test/method-diff.test.js test/flow-graph.test.js test/method-metadata.test.js test/flow-layout.test.js test/business-flow.test.js test/sequence-model.test.js test/sequence-canvas.test.js test/elk-layout.test.js"
   },
   "dependencies": {
     "@pierre/diffs": "^1.2.7",
-    "express": "^5.2.0"
+    "@xyflow/react": "12.12.0",
+    "elkjs": "0.12.0",
+    "express": "^5.2.0",
+    "java-parser": "3.0.1"
   },
   "devDependencies": {
     "@pierre/trees": "^1.0.0-beta.4",

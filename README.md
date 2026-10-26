@@ -1,5 +1,11 @@
 # yadiff, yet another diff viewer
 
+## custom 分支：功能链代码阅读器
+
+首次运行 `npm ci`、`npm run build`，之后用 `node bin/yadiff-review.js --review <review.json>` 打开 code-change-review 报告，或将 JSON 拖到 `open-review.cmd`。支持完整源码快照、沿功能链连续阅读、代码旁说明、定义候选预览和独立保存的阅读进度。
+
+已有服务随用随启并自动复用；运行时不重新安装依赖，不需要 IDEA/VS Code 插件。详见 [本地安装和使用说明](docs/custom-reader.md)。原有 yadiff 用法保留。
+
 <img src="assets/screenshot.png" alt="screenshot" width="800" />
 
 > Huge shoutout to [pierrecomputer](https://github.com/pierrecomputer/pierre). Inspired by [diffshub](https://diffshub.com/), this tool is only possible thanks to the incredibly beautiful and high-performance diff and tree packages. All credit goes to the team!

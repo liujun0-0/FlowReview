@@ -1,0 +1,6 @@
+import type {BusinessJourney} from './types';
+export function BusinessOverview({journey,onStep,compact=false}:{journey:BusinessJourney;compact?:boolean;onStep:(id:string)=>void}) {
+ const changed=journey.steps.filter(s=>!['unchanged','unknown'].includes(s.change.status));
+ const first=changed[0];
+ return <section className="rr-business-overview" aria-label="业务链路概览"><h3>{journey.source.purpose}</h3><details className="rr-origin-details" open={!compact}><summary>来源、输入与最终结果</summary><div className="rr-origin-result"><div><b>数据从哪里来</b><p>{journey.source.actor}</p><code>{journey.source.entry}</code><p><b>输入：</b>{journey.source.input}</p></div><div><b>最终做成什么</b><p>{journey.source.outcome}</p><p><b>范围：</b>{journey.coverage.status}</p></div></div></details><div className="rr-first-change"><b>{first?'变化从这里开始：':'没有标记业务变化'}</b>{first&&<button onClick={()=>onStep(first.id)}>{first.title}</button>}<span> · {changed.length} 个步骤有变化 / {journey.steps.length} 个业务步骤</span><details><summary>变化传播到哪些步骤</summary>{changed.map(s=><p key={s.id}><button onClick={()=>onStep(s.id)}>{s.title}</button>：{s.change.after}<br/><small>影响：{s.change.impact.join('；')}</small></p>)}</details></div>{journey.coverage.boundaries.length>0&&<details className="rr-scope-boundaries"><summary>已核对范围与未展开边界</summary>{journey.coverage.boundaries.map((item,i)=><p key={i}>{item}</p>)}</details>}</section>;
+}
