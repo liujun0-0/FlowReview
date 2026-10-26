@@ -2,9 +2,9 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import type { ReactNode } from 'react';
 import { ReactFlow, ReactFlowProvider, BaseEdge, getSmoothStepPath, applyNodeChanges, Background, Controls, MiniMap, Handle, Position, MarkerType, useNodesState, useReactFlow, useNodesInitialized, useUpdateNodeInternals, useViewport, type Node, type NodeProps, type Edge, type NodeChange, type EdgeProps } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { buildSequence, type SequenceObject, type ProcessStep, type SequenceMethod } from '../../lib/review/sequence-model.js';
-import { bindProcessCalls, splitProcessReferences } from '../../lib/review/sequence-canvas.js';
-import { layoutReviewGraph } from '../../lib/review/elk-layout.js';
+import { buildSequence, type SequenceObject, type ProcessStep, type SequenceMethod } from '../../../lib/review/sequence-model.js';
+import { bindProcessCalls, splitProcessReferences } from '../../../lib/review/sequence-canvas.js';
+import { layoutReviewGraph } from '../../../lib/review/elk-layout.js';
 import { STATUS_LABELS } from './FlowGraph';
 import type { Flow, Manifest } from './types';
 

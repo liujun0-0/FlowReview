@@ -17,7 +17,7 @@ import {
     formatStatusDetails,
     getLargeDiffLabel,
 } from './format';
-import { loadPreferences, savePreferences } from './preferences';
+import { loadPreferences, savePreferences } from '../../shared/preferences';
 import { isFileReviewTarget } from './reviews';
 import type { DiffResponse, DiffStyle, DraftReview, LoadState, Overflow, Review, SavedReview } from './types';
 import { increment, modulo } from './utils';

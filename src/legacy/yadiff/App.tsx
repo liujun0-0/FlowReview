@@ -1,7 +1,8 @@
+import './style.css';
 import { ReadyDiffView } from './components/ReadyDiffView';
 import { Shell } from './components/Shell';
 import { useDiffViewerModel } from './useDiffViewerModel';
-import { ThemeProvider, useTheme } from './useTheme';
+import { ThemeProvider, useTheme } from '../../shared/useTheme';
 
 export function App() {
     const theme = useTheme();

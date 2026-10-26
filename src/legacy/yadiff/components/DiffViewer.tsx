@@ -6,7 +6,7 @@ import type { ProjectedFileIdentity } from '../diffProjection';
 import { createDraftReview, isFileReviewTarget, reviewMatchesFile, saveDraftReview } from '../reviews';
 import type { DiffViewerModel } from '../useDiffViewerModel';
 import type { SavedReview } from '../types';
-import { useThemeContext } from '../useTheme';
+import { useThemeContext } from '../../../shared/useTheme';
 import { DiffHeader } from './DiffHeader';
 import { DraftReviewBox, SavedReviewAnnotation } from './ReviewAnnotations';
 

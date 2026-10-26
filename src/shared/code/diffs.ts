@@ -16,17 +16,3 @@ export const DIFF_WORKER_POOL_OPTIONS = {
 export const DIFF_HIGHLIGHTER_OPTIONS = {
     theme: { dark: 'pierre-dark', light: 'pierre-light' } as const,
 };
-
-export const SHORTCUTS: [string, string][] = [
-    ['T', 'Tree search'],
-    ['S', 'Show or hide tree view'],
-    ['U', 'Unified diff'],
-    ['W', 'Line wrap'],
-    ['L', 'Line numbers'],
-    ['B', 'Backgrounds'],
-    ['D', 'Cycle theme (auto/light/dark)'],
-    ['C', 'Collapse or expand all'],
-    ['J / K', 'Next or previous file'],
-    ['Y', 'Copy reviews'],
-    ['Esc', 'Dismiss search or draft review'],
-];

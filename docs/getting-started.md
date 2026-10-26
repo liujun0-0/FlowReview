@@ -82,3 +82,7 @@ Windows 可将报告 JSON 拖到 `open-review.cmd`。正常结果是 `http://127
 - 启动失败：查看完整命令错误；如默认端口被占用，用 `node bin/flowreview.js --snapshot <目录> --port 5189`。不要自动退回旧版 HTML。
 
 商用和再分发须同时遵守原项目及依赖协议，见 [licensing.md](licensing.md)。
+
+## 项目开发入口
+
+`npm run dev` 打开 FlowReview 前端开发首页（仅前端，无报告 API）；完整报告继续用 `npm run review -- --review <JSON>`。原版 Git/jj/PR 查看器位于兼容模块，使用 `npm run dev:legacy`，页面地址为其服务的 `/legacy`。结构与维护边界见 [architecture.md](architecture.md) 和 [UPSTREAM.md](../UPSTREAM.md)。

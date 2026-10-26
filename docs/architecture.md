@@ -1,0 +1,30 @@
+# FlowReview 项目结构
+
+## 产品边界
+
+默认产品是功能链评审阅读器。代码分析规范随 skill 分发，本地工具采集固定 Git 源码，前端沿流程展示方法与变化。yadiff 原查看器作为可选兼容功能维护；无需通过它调用源码渲染器。
+
+## 目录职责
+
+- src/app：应用选择、默认首页。评审及兼容界面按需加载，避免首页直接初始化无关 API。
+- src/features/review：流程画布、业务概览、源码侧栏与评审状态。
+- src/shared：共享主题、偏好、基础类型及 @pierre/diffs 配置，不依赖 legacy 或评审业务代码。
+- src/legacy/yadiff：原版 Git/jj/PR 查看器及其专用组件和样式。
+- lib/cli/review.js：FlowReview CLI 正式实现，负责参数、快照启动和运行进程。
+- lib/review：服务、固定快照、Java 方法索引、图模型与布局适配；本轮维持现有模块路径以稳定报告协议。
+- lib/legacy/yadiff：原 CLI 与 Git/jj/PR 后端适配器。
+- bin：公开命令，FlowReview 及旧命令的薄入口；skills、tools、test、licenses 分别维护配套资源。
+
+## 入口与兼容
+
+/ 显示 FlowReview 使用引导；/review/:id 打开已注册的固定报告；原版查看器由自己的 CLI 服务在 /legacy 提供原有 API。FlowReview 报告服务不承诺提供原版 API，两个服务不混用。
+
+npm run dev 启动 FlowReview 前端开发首页，默认仅监听本机。它只提供前端热更新，不启动报告 API；查看真实报告仍通过 npm run review / flowreview 命令启动本地阅读服务。原版全栈开发用 npm run dev:legacy。
+
+旧命令 yadiff-review 仍可采集/打开报告，旧 yadiff 保留 Git/jj/PR 功能以及 --review/--snapshot 的转发。JSON、manifest、快照、报告地址路径和状态目录不在本轮迁移。重启服务的访问凭证可能变化，使用新输出地址。
+
+## 本轮验收
+
+类型检查和正式构建通过；新旧 CLI 帮助及 Git 适配器验证；既有阅读器回归、skill 安装测试通过；浏览器核对首页和真实报告的流程与源码侧栏；分发清单包含共享/兼容实现及来源说明。
+
+后续在独立任务中拆分超大阅读器组件、服务与图模型，不与这轮目录迁移混做。来源及版权依据见 ../UPSTREAM.md。

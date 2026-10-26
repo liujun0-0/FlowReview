@@ -1,6 +1,6 @@
 import { formatSource } from '../format';
 import type { DiffViewerModel } from '../useDiffViewerModel';
-import { useThemeContext } from '../useTheme';
+import { useThemeContext } from '../../../shared/useTheme';
 import { PillButton } from './PillButton';
 import { ShortcutHelp } from './ShortcutHelp';
 
@@ -52,7 +52,7 @@ export function Toolbar({
     return (
         <header className="toolbar">
             <div className="titleBlock">
-                <div className="eyebrow">FlowReview · {formatSource(response?.source)}</div>
+                <div className="eyebrow">yadiff 兼容模式 · {formatSource(response?.source)}</div>
                 <h1>{response?.repositoryName} <span>{response?.target}</span></h1>
                 {largeDiffLabel != null ? <div className="largeDiffBadge">{largeDiffLabel}</div> : null}
             </div>

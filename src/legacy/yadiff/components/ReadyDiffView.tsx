@@ -3,7 +3,7 @@ import { WorkerPoolContextProvider } from '@pierre/diffs/react';
 import { DIFF_HIGHLIGHTER_OPTIONS, DIFF_WORKER_POOL_OPTIONS } from '../constants';
 import { useKeyboardRouter } from '../keyboardRouter';
 import type { DiffViewerModel } from '../useDiffViewerModel';
-import { useThemeContext } from '../useTheme';
+import { useThemeContext } from '../../../shared/useTheme';
 import { DiffViewer } from './DiffViewer';
 import { Sidebar } from './Sidebar';
 import { Toolbar } from './Toolbar';

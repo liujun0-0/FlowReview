@@ -1,7 +1,7 @@
-import { buildBusinessGraph } from '../../lib/review/business-flow.js';
-import { layoutMethodGraph } from '../../lib/review/flow-layout.js';
+import { buildBusinessGraph } from '../../../lib/review/business-flow.js';
+import { layoutMethodGraph } from '../../../lib/review/flow-layout.js';
 import { useEffect, useId, useRef, useState } from 'react';
-import { buildMethodGraph, type ModuleStatus } from '../../lib/review/flow-graph.js';
+import { buildMethodGraph, type ModuleStatus } from '../../../lib/review/flow-graph.js';
 import type { Flow, Manifest } from './types';
 
 export const STATUS_LABELS: Record<ModuleStatus, string> = { unchanged: '未修改', modified: '修改', added: '新增', deleted: '删除', unknown: '待核对' };

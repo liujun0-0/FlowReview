@@ -30,6 +30,10 @@ python tools/install_skill.py --skills-dir "/path/to/skills"
 
 [完整安装、触发、启动、更新与故障处理](docs/getting-started.md) · [许可证与商用说明](docs/licensing.md)。样例 review.example.json 仅用于旧版离线演示，不是可直接打开的真实 Git 报告。
 
+## 项目结构与开发
+
+默认产品入口位于 `src/app`，评审功能位于 `src/features/review`，共享能力位于 `src/shared`，原查看器隔离在 `src/legacy/yadiff` 与 `lib/legacy/yadiff`。`npm run dev` 启动 FlowReview 前端首页；完整报告仍通过 review 命令启动。原查看器开发入口为 `npm run dev:legacy`。详见 [项目结构](docs/architecture.md) 与 [上游来源](UPSTREAM.md)。
+
 ## 来源与上游用法
 
 基于 [baggiiiie/yadiff](https://github.com/baggiiiie/yadiff) 开发，保留作者署名、MIT 许可证及第三方许可证。以下为上游工具说明；其中 npm 命令安装的是原版 yadiff，并非 FlowReview。
