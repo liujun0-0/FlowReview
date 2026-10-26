@@ -20,4 +20,3 @@ python scripts/render.py examples/review.example.json --no-git -o demo.html
 - `--no-git` 仅离线预览，标明未核验版本与覆盖率，不能与 strict 合用。
 - Git 失败、范围无效、取码期间工作区变化时退出，不输出伪成功报告。
 - JSON 兼容 UTF-8 BOM；报告含源代码，按项目现有权限存放，勿擅自上传。
-
