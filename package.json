@@ -36,10 +36,15 @@
     "README.md",
     "open-review.cmd",
     "setup-review.cmd",
-    "docs/custom-reader.md"
+    "docs/custom-reader.md",
+    "skills/",
+    "tools/install_skill.py",
+    "docs/getting-started.md",
+    "docs/licensing.md",
+    "LICENSE"
   ],
   "engines": {
-    "node": ">=18.13.0"
+    "node": "^20.19.0 || >=22.12.0"
   },
   "publishConfig": {
     "access": "public"
@@ -50,7 +55,8 @@
     "build": "vite build",
     "prepack": "npm run build",
     "review": "node ./bin/flowreview.js",
-    "test:review": "node --test test/review.test.js test/method-diff.test.js test/flow-graph.test.js test/method-metadata.test.js test/flow-layout.test.js test/business-flow.test.js test/sequence-model.test.js test/sequence-canvas.test.js test/elk-layout.test.js"
+    "test:review": "node --test test/review.test.js test/method-diff.test.js test/flow-graph.test.js test/method-metadata.test.js test/flow-layout.test.js test/business-flow.test.js test/sequence-model.test.js test/sequence-canvas.test.js test/elk-layout.test.js",
+    "test:skill": "python -B test/test_skill_install.py"
   },
   "dependencies": {
     "@pierre/diffs": "^1.2.7",

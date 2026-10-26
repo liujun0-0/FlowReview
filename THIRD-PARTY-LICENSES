@@ -45,3 +45,5 @@ Flow renderer:
 Full notice: licenses/react-flow-MIT.txt (React Flow attribution retained in UI).
 elkjs 0.12.0 — Eclipse Public License 2.0 (EPL-2.0 option) — https://github.com/kieler/elkjs
 Full license: licenses/elkjs-EPL-2.0.md. Unmodified upstream layout engine is bundled locally; upstream source is available at the repository above and from the elkjs npm source distribution. No source-code changes were made to ELK.
+
+Distribution notes: see docs/licensing.md for retained notices, the EPL source-availability statement and commercial redistribution conditions. A full Apache-2.0 text is also included in licenses/Apache-2.0.txt.

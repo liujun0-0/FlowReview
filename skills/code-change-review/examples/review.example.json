@@ -1,0 +1,285 @@
+{
+  "meta": {
+    "title": "订单超时自动取消（跨 order-job / order-svc / user-svc）（离线演示）",
+    "range": "main..feat/order-timeout-cancel",
+    "stat": "14 个文件，+623 / -118 行"
+  },
+  "flowPoints": [
+    {
+      "id": "FP-1",
+      "title": "FP-1 超时订单自动取消",
+      "status": "完整",
+      "requirement": "订单创建 15 分钟未支付则自动取消，以创建时间为准，不要用支付倒计时",
+      "chains": [
+        {
+          "id": "C1",
+          "name": "cron(order-job) → ScanTimeoutOrders → CancelOrder(order-svc) → UpdateStatus(order-svc)",
+          "sideEffect": "UPDATE orders.status；写 order_status_log",
+          "hops": [
+            {
+              "id": "h1",
+              "project": "order-job",
+              "file": "job/order_timeout.go",
+              "line": 21,
+              "func": "ScanTimeoutOrders",
+              "type": "新增",
+              "tier": "细看",
+              "focus": [
+                "边界"
+              ],
+              "risk": "中",
+              "confidence": "猜",
+              "why": "对应需求第 1 条：需要一个定时入口来触发取消",
+              "behavior": "新增定时任务，每分钟扫一次超时未支付订单，批量取消",
+              "role": "订单超时治理的入口：周期性找出超时未支付订单并触发取消，是整条「超时取消」链路的起点。",
+              "necessity": "必要",
+              "match": "匹配",
+              "reasonableness": "合理",
+              "counterfactual": "不改则超时订单永远停留在未支付状态，需人工/其它任务兜底。",
+              "verdict": "必要改动",
+              "risk_detail": "扫表未见分页，订单表数据量大时可能一次性加载过多导致 OOM；需确认线上表规模",
+              "verify": "rg -n \"ScanTimeoutOrders\" --type go\n查线上 orders 表行数，决定是否要分页",
+              "deeper": "定时任务与业务服务同进程还是独立？独立部署时需确认是否存在多实例重复执行",
+              "code": [
+                {
+                  "t": " ",
+                  "n": 20,
+                  "c": "func init() {"
+                },
+                {
+                  "t": "+",
+                  "n": 21,
+                  "c": "    cron.Every(1).Minutes().Do(ScanTimeoutOrders)"
+                },
+                {
+                  "t": " ",
+                  "n": 22,
+                  "c": "}"
+                }
+              ],
+              "verifyStatus": "未执行"
+            },
+            {
+              "id": "h2",
+              "project": "order-svc",
+              "file": "svc/order.go",
+              "line": 88,
+              "func": "CancelOrder",
+              "type": "改实现",
+              "tier": "细看",
+              "focus": [
+                "状态流转",
+                "错误处理",
+                "边界"
+              ],
+              "risk": "高",
+              "confidence": "猜",
+              "why": "为了复用给定时任务调用，删掉了原本的归属校验（原校验依赖 HTTP 上下文）",
+              "behavior": "签名未变，但删除了「校验 order.UserID == ctx.UserID」这段逻辑",
+              "role": "订单取消的唯一入口：所有取消（HTTP 接口、定时任务）都走到这里，负责校验可取消性并落状态。",
+              "necessity": "非必要",
+              "match": "不匹配",
+              "reasonableness": "不合理",
+              "counterfactual": "保留校验则定时任务无 ctx 会一直被拒；正确解法是把校验改成内部调用可跳过，而非直接删除。",
+              "verdict": "疑似误改",
+              "risk_detail": "原本 HTTP 接口调用时有上游鉴权兜底；现在定时任务直接调用，少了一层校验，存在越权取消他人订单的风险",
+              "verify": "rg -n \"CancelOrder\" --type go\n构造他人 order_id，看定时任务能否取消 → 暴露越权",
+              "deeper": "确认是真的要删除校验，还是应把校验改成可选入参",
+              "code": [
+                {
+                  "t": " ",
+                  "n": 85,
+                  "c": "func CancelOrder(orderID int64, reason string) error {"
+                },
+                {
+                  "t": "-",
+                  "n": 86,
+                  "c": "    if o.UserID != ctx.UserID {"
+                },
+                {
+                  "t": "-",
+                  "n": 87,
+                  "c": "        return ErrForbidden"
+                },
+                {
+                  "t": "-",
+                  "n": 88,
+                  "c": "    }"
+                }
+              ],
+              "verifyStatus": "未执行"
+            },
+            {
+              "id": "h3",
+              "project": "order-svc",
+              "file": "repo/order.go",
+              "line": 203,
+              "func": "UpdateStatus",
+              "type": "改签名",
+              "tier": "略读",
+              "risk": "中",
+              "confidence": "猜",
+              "why": "对应需求第 2 条：取消原因要落库，便于后续对账",
+              "behavior": "新增 reason 参数，写入 cancel_reason 字段",
+              "role": "订单状态落库的统一写入口，所有状态变更都经它写 orders.status。",
+              "necessity": "必要",
+              "match": "匹配",
+              "reasonableness": "合理",
+              "counterfactual": "不加 reason 则取消原因无据可查，对账/客服追溯只能靠猜。",
+              "verdict": "必要改动",
+              "risk_detail": "所有调用方都要跟随改签名；需确认没有遗漏的调用点（可能有 RPC 调用方在仓库外）",
+              "verify": "rg -n \"UpdateStatus\" --type go\n全局搜 RPC 定义，确认是否有外部服务依赖旧签名",
+              "code": [
+                {
+                  "t": "-",
+                  "n": 203,
+                  "c": "func UpdateStatus(id int64, status Status) error {"
+                },
+                {
+                  "t": "+",
+                  "n": 203,
+                  "c": "func UpdateStatus(id int64, status Status, reason string) error {"
+                }
+              ],
+              "verifyStatus": "未执行"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FP-2",
+      "title": "FP-2 取消后释放库存",
+      "status": "部分",
+      "requirement": "取消成功后释放已占用的库存",
+      "chains": [
+        {
+          "id": "C2",
+          "name": "CancelOrder(order-svc) → ReleaseInventory → IncrStock",
+          "sideEffect": "UPDATE sku_stock；写 stock_flow 流水",
+          "hops": [
+            {
+              "id": "h4",
+              "project": "order-svc",
+              "file": "repo/stock.go",
+              "line": 30,
+              "func": "IncrStock",
+              "type": "改实现",
+              "tier": "细看",
+              "focus": [
+                "并发",
+                "事务"
+              ],
+              "risk": "高",
+              "confidence": "猜",
+              "why": "看不出意图 —— 可能是有意的性能优化，也可能是误删。必须确认",
+              "behavior": "去掉了 SELECT ... FOR UPDATE 行锁",
+              "role": "库存增减的底层原子操作：所有库存变动（下单扣减、取消归还、后台调拨）都复用它。",
+              "necessity": "非必要",
+              "match": "不匹配",
+              "reasonableness": "不合理",
+              "counterfactual": "去掉行锁后并发读写同一 sku 会丢失更新，库存只多不少且不报错；典型的并发回归。",
+              "verdict": "疑似误改",
+              "risk_detail": "定时任务每分钟批量跑，多个订单并发释放同一 sku 时会丢失更新。编译和测试都不会报错，是典型的并发 bug",
+              "verify": "go test ./svc/inventory -run TestConcurrentRelease -race",
+              "code": [
+                {
+                  "t": " ",
+                  "n": 29,
+                  "c": "func IncrStock(skuID int64, delta int) error {"
+                },
+                {
+                  "t": "-",
+                  "n": 30,
+                  "c": "    row := db.QueryRow(`SELECT stock FROM sku_stock WHERE sku_id=? FOR UPDATE`, skuID)"
+                },
+                {
+                  "t": "+",
+                  "n": 30,
+                  "c": "    row := db.QueryRow(`SELECT stock FROM sku_stock WHERE sku_id=?`, skuID)"
+                }
+              ],
+              "verifyStatus": "未执行"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FP-3",
+      "title": "FP-3 取消后通知用户",
+      "status": "缺失",
+      "requirement": "取消后短信通知用户",
+      "chains": []
+    }
+  ],
+  "orphans": [
+    {
+      "project": "user-svc",
+      "tier": "细看",
+      "location": "user/svc/notify.go:88",
+      "what": "新增短信通知调用",
+      "reason": "疑似 AI 从 FP-3 联想补充，但没有接进任何调用链",
+      "suggestion": "要么接进 FP-3，要么删除（现在是死代码）",
+      "code": [
+        {
+          "t": "+",
+          "n": 88,
+          "c": "    sms.Send(phone, \"订单\"+orderNo+\"已取消\")"
+        }
+      ]
+    },
+    {
+      "project": "order-svc",
+      "tier": "略读",
+      "location": "svc/order.go:31",
+      "what": "重构了 buildOrderVO 的字段拼装",
+      "reason": "与本次需求无关，纯顺手重构",
+      "suggestion": "删除，单独提 PR（它会把 diff 撑大，增加你的 review 负担）"
+    }
+  ],
+  "implChanges": [
+    {
+      "location": "order-svc svc/order.go:88",
+      "change": "删除订单归属校验",
+      "impact": "HTTP 取消接口（原本靠上游鉴权兜底）"
+    },
+    {
+      "location": "order-svc repo/stock.go:30",
+      "change": "去掉 FOR UPDATE 行锁",
+      "impact": "所有库存增减路径，不止本次改动"
+    }
+  ],
+  "verifyPlan": [
+    {
+      "strategy": "性质测试",
+      "target": "IncrStock 并发放开",
+      "how": "并发 N 次增减同一 sku，断言最终库存 = 初始 + Σdelta",
+      "why": "去掉行锁后，丢失更新是确定性可复现的，性质断言比逐个 case 更有效"
+    },
+    {
+      "strategy": "表征测试",
+      "target": "CancelOrder",
+      "how": "对既有取消场景录制输入/输出，改动前后比对",
+      "why": "删除归属校验后行为已漂移，先用表征测试把现状锁死"
+    },
+    {
+      "strategy": "影子运行",
+      "target": "订单超时扫描任务",
+      "how": "线上旁路跑一遍扫描（只记日志、不真取消），比对命中集合与耗时",
+      "why": "扫表性能与命中范围只有真实数据量才能验证"
+    }
+  ],
+  "unknowns": [
+    {
+      "what": "CancelOrder 是否被仓库外服务调用",
+      "reason": "可能是内部 RPC 被其他服务引用",
+      "how": "全局搜 + 问原作者"
+    },
+    {
+      "what": "去掉 FOR UPDATE 是有意优化还是误删",
+      "reason": "diff 里看不出意图",
+      "how": "必须问 AI 或原作者"
+    }
+  ]
+}

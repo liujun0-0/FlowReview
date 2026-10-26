@@ -1,5 +1,7 @@
 # FlowReview：按功能链阅读本地代码变更
 
+新用户从 [完整安装与使用指南](getting-started.md) 开始；本文说明阅读器参数与实现细节。
+
 FlowReview 基于 [yadiff](https://github.com/baggiiiie/yadiff)，保留原来的 Git/jj/PR 用法，并新增独立的本地功能链阅读入口。
 
 ## 安装一次

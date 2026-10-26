@@ -16,6 +16,20 @@ Windows 可将 JSON 拖到 `open-review.cmd`。依赖安装一次，之后随用
 
 支持方法流程画布、分支与循环说明、变更状态、对象引用、源码侧栏和测试代码过滤。旧 `yadiff` / `yadiff-review` 命令与已有 skill 启动脚本继续兼容。
 
+## 配套 AI skill
+
+项目自带 [`skills/code-change-review`](skills/code-change-review)，阅读器和报告生成规范一同维护、一起分发。在项目根目录安装：
+
+```sh
+python tools/install_skill.py
+# 自定义 AI 工具的 skills 父目录
+python tools/install_skill.py --skills-dir "/path/to/skills"
+```
+
+要求 Git、Node.js（推荐 22.12+ 或 24 LTS）及 Python 3.10+。默认不覆盖已有同名 skill；安装器管理的副本可用 `--update` 更新。安装后让 AI 使用 code-change-review，并给出业务仓库及比较范围；已有 JSON 可直接打开，无需重新分析。
+
+[完整安装、触发、启动、更新与故障处理](docs/getting-started.md) · [许可证与商用说明](docs/licensing.md)。样例 review.example.json 仅用于旧版离线演示，不是可直接打开的真实 Git 报告。
+
 ## 来源与上游用法
 
 基于 [baggiiiie/yadiff](https://github.com/baggiiiie/yadiff) 开发，保留作者署名、MIT 许可证及第三方许可证。以下为上游工具说明；其中 npm 命令安装的是原版 yadiff，并非 FlowReview。
