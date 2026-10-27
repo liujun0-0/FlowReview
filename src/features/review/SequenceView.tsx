@@ -5,6 +5,7 @@ import '@xyflow/react/dist/style.css';
 import { buildSequence, type SequenceObject, type ProcessStep, type SequenceMethod } from '../../../lib/review/sequence-model.js';
 import { bindProcessCalls, splitProcessReferences } from '../../../lib/review/sequence-canvas.js';
 import { layoutReviewGraph } from '../../../lib/review/elk-layout.js';
+import { objectReferenceColor } from '../../../lib/review/function-canvas.js';
 import { STATUS_LABELS } from './FlowGraph';
 import type { Flow, Manifest } from './types';
 
@@ -25,7 +26,7 @@ const MethodNode=memo(function MethodNode({id,data,selected}:NodeProps<ReviewNod
  };
  const process=(steps:ProcessStep[],prefix=''):ReactNode=><ol className="rr-seq-execution">{steps.map((s,i)=>{const path=prefix?`${prefix}.${i}`:String(i);return <li key={path} className={s.children.length?'rr-seq-execution-group':''}>{processLabel(s,path)}{s.children.length>0&&process(s.children,path)}</li>;})}</ol>;
  return <article ref={root} data-canvas-id={id} data-method={id} className={`rr-canvas-node rr-seq-method rr-seq-${m.status} ${selected?'rr-seq-selected':''} nopan`}>
- <Target/><div className="rr-canvas-grip" aria-label={`拖动 ${m.title}`}>⠿ 拖动</div>
+ <Target/><Output id="out"/><div className="rr-canvas-grip" aria-label={`拖动 ${m.title}`}>⠿ 拖动</div>
  <button className="rr-seq-methodhead nodrag" onClick={()=>data.open(m.id)}><span className={`rr-status rr-status-${m.status}`}>{STATUS_LABELS[m.status]}</span><strong>{m.owner.replace(/\.java$/,'')}.{m.title}()</strong><small>{m.project} · L{m.range?.join('–')||'未定位'} · 看完整方法 ↗</small></button>
  {m.objects.length>0&&<div className="rr-seq-object-refs">{m.objects.map(o=><div key={o.fileId} className="rr-rf-reference"><button className="nodrag" data-object-ref={`${m.id}-${o.fileId}`} onClick={()=>data.open(o.id)}>引用对象 → {o.name}<small>L{o.line} · 对象源码</small></button><Output id={`object:${o.fileId}`}/></div>)}</div>}
  {m.endpoint&&<div className="rr-endpoint">{m.endpoint.method} {m.endpoint.path}</div>}{m.step&&<p className="rr-seq-business">{m.step.title}</p>}<p><b>功能：</b>{m.role}</p>
@@ -37,7 +38,8 @@ const MethodNode=memo(function MethodNode({id,data,selected}:NodeProps<ReviewNod
 });
 const ObjectNode=memo(function ObjectNode({id,data}:NodeProps<ReviewNode>){const o=data.object!,update=useUpdateNodeInternals(),root=useRef<HTMLElement>(null);useEffect(()=>{const el=root.current;if(!el)return;const changed=()=>update(id);el.addEventListener('toggle',changed,true);return()=>el.removeEventListener('toggle',changed,true);},[id,update]);return <aside ref={root} data-canvas-id={id} data-object-box={o.fileId} className={`rr-canvas-node rr-seq-object rr-seq-object-card rr-seq-object-${o.status} nopan`}><Target/><div className="rr-canvas-grip" aria-label={`拖动 ${o.name}`}>⠿ 拖动</div><ObjectContent object={o} open={data.open}/></aside>;});
 const ProjectNode=memo(function ProjectNode({data}:NodeProps<ReviewNode>){return <div className="rr-rf-project"><strong>项目 · {data.project}</strong></div>;});
-const nodeTypes={method:MethodNode,object:ObjectNode,project:ProjectNode};
+export const methodCanvasNodeTypes={method:MethodNode,object:ObjectNode};
+const nodeTypes={...methodCanvasNodeTypes,project:ProjectNode};
 function RoutedEdge(props:EdgeProps){const route=(props.data as {route?:{x:number;y:number}[]}|undefined)?.route;const path=route?.length?['M'+props.sourceX+','+props.sourceY,...route.map(p=>'L'+p.x+','+p.y),'L'+props.targetX+','+props.targetY].join(' '):getSmoothStepPath(props)[0];return <BaseEdge id={props.id} path={path} markerEnd={props.markerEnd} style={props.style}/>;}
 const edgeTypes={elk:RoutedEdge};
 
@@ -62,7 +64,7 @@ function FlowCanvas({flow,manifest,include,selected,onSelect}:Props) {
  const arranged=useRef(''),request=useRef(0);
  const open=useCallback((id:string)=>{const n=manifest.nodes[id];if(n)onSelect(n.fileId,id,flow.journey?.steps.find(s=>s.implementationIds.includes(id))?.id);},[manifest,onSelect,flow]);
  useEffect(()=>{
-  setNodes(old=>{const existing=new Map(old.map(n=>[n.id,n]));const base=(id:string,type:'method'|'object',data:Data,index:number):ReviewNode=>{const prior=existing.get(id);return {...prior,id,type,position:prior?.position||{x:(index%3)*560,y:Math.floor(index/3)*600},style:{width:type==='object'?285:400},dragHandle:'.rr-canvas-grip',data,selected:id===selectedCanvasId,connectable:false};};
+  setNodes(old=>{const existing=new Map(old.map(n=>[n.id,n]));const base=(id:string,type:'method'|'object',data:Data,index:number):ReviewNode=>{const prior=existing.get(id);return {...prior,id,type,position:prior?.position||{x:(index%3)*560,y:Math.floor(index/3)*600},style:{width:type==='object'?285:400},dragHandle:undefined,data,selected:id===selectedCanvasId,connectable:false};};
    return [...model.methods.map((m,i)=>base(m.id,'method',{flowKey:topology,method:m,binding:bindings[m.id],expandOld,open,project:m.project},i)),...objects.map((o,i)=>base(`object:${o.fileId}`,'object',{flowKey:topology,object:o,expandOld,open,project:o.project},model.methods.length+i))];
   });
  },[model,objects,bindings,expandOld,open,selectedCanvasId,topology,setNodes]);

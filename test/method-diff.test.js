@@ -39,3 +39,17 @@ test('new and deleted files, separated hunks, CRLF and no final newline remain r
   }
 });
 
+
+test('adjacent method changes cannot repeat the entire class in every method card', () => {
+ const before='class A {\nvoid first() {\n oldCall();\n}\nvoid other() {\n oldOther();\n}\n}';
+ const after=before.replace('oldCall()', 'newCall()').replace('oldOther()', 'newOther()');
+ const diff=methodDiff('A.java',before,after,[2,4],[2,4],true,'isolated');
+ validate(diff,before,after);
+ assert.ok(!diff.additionLines.join('').includes('newOther'));
+ assert.ok(!diff.deletionLines.join('').includes('oldOther'));
+ assert.ok(!diff.additionLines.join('').includes('class A'));
+ const added='class A {\nvoid added() {\n run();\n}\n}';
+ const newMethod=methodDiff('A.java','class A {\n}',added,null,[2,4],true,'added-method');
+ validate(newMethod,'class A {\n}',added);
+ assert.ok(!newMethod.additionLines.join('').includes('class A'));
+});

@@ -213,5 +213,23 @@ class ValidationTests(unittest.TestCase):
         self.assertIn('<\\/script>', page)
 
 
+class LegacyEntryTests(unittest.TestCase):
+    def test_html_is_rejected_by_default_and_existing_output_is_untouched(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / 'review.html'
+            out.write_text('existing report', encoding='utf-8')
+            result = subprocess.run([os.sys.executable, '-X', 'utf8', '-B', render.__file__, '--demo', '-o', str(out)], capture_output=True, encoding='utf-8')
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('open_reader.py', result.stderr)
+            self.assertEqual(out.read_text(encoding='utf-8'), 'existing report')
+
+    def test_explicit_legacy_html_still_works(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / 'explicit.html'
+            result = subprocess.run([os.sys.executable, '-X', 'utf8', '-B', render.__file__, '--demo', '--legacy-html', '-o', str(out)], capture_output=True, encoding='utf-8')
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn('<!DOCTYPE html>', out.read_text(encoding='utf-8'))
+
+
 if __name__ == '__main__':
     unittest.main()

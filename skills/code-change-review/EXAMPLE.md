@@ -4,7 +4,7 @@
 
 > 这是「一份完整评审报告长什么样」的参考样例（人读形态）。
 > 机器产出的轻量版用 `python scripts/render.py examples/review.example.json --no-git --summary` 生成；
-> 完整交互版用 `python scripts/render.py examples/review.example.json --no-git -o review.html --open` 生成。
+> 仅用户明确选择旧版离线 HTML 时用 `python scripts/render.py examples/review.example.json --no-git --legacy-html -o review.html --open` 生成。
 
 - 变更范围：`main..feat/order-timeout-cancel`
 - 规模：14 个文件，+623 / -118 行 → **大改动**（建议优先行为验证）

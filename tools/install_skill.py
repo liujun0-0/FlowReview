@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 import shutil
 import tempfile
+import os
+import uuid
 import warnings
 import time
 
@@ -35,6 +37,22 @@ def rename_directory(source, target):
             time.sleep(0.05 * (2 ** attempt))
 
 
+def create_stage(parent, prefix):
+    # Python's Windows mkdtemp uses mode 0700, producing an owner-only ACL.
+    # A renamed installed skill must instead inherit its skills directory ACL,
+    # just like a normally created skill, so ordinary agent processes can read it.
+    if os.name != 'nt':
+        return Path(tempfile.mkdtemp(prefix=prefix, dir=parent))
+    for _ in range(10):
+        candidate = parent / (prefix + uuid.uuid4().hex)
+        try:
+            candidate.mkdir()
+            return candidate
+        except FileExistsError:
+            continue
+    raise FileExistsError('无法创建唯一的 skill 暂存目录')
+
+
 def install(tool, skills_dir, update=False):
     tool = Path(tool).resolve()
     source = tool / 'skills' / 'code-change-review'
@@ -60,7 +78,7 @@ def install(tool, skills_dir, update=False):
     if target.exists() and not previous:
         raise ValueError(f'目标不是此安装器管理的 skill：{target}。请先备份并移走，或选择其他 --skills-dir。')
     target.parent.mkdir(parents=True, exist_ok=True)
-    stage = Path(tempfile.mkdtemp(prefix=prefix + 'stage-', dir=target.parent))
+    stage = create_stage(target.parent, prefix + 'stage-')
     switched = False
     try:
         ignore = shutil.ignore_patterns('__pycache__', '*.pyc', '.flowreview-install.json')

@@ -115,5 +115,31 @@ class SkillInstallTests(unittest.TestCase):
             self.assertEqual(len(attempts), 2)
 
 
+class WindowsInstallPermissionTests(unittest.TestCase):
+    @unittest.skipUnless(os.name == 'nt', 'Windows ACL inheritance')
+    def test_installed_skill_inherits_parent_acl_instead_of_owner_only_acl(self):
+        import ctypes
+        from ctypes import wintypes
+        advapi = ctypes.WinDLL('advapi32', use_last_error=True)
+        get_security = advapi.GetFileSecurityW
+        get_security.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.LPVOID, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD)]
+        get_security.restype = wintypes.BOOL
+        get_control = advapi.GetSecurityDescriptorControl
+        get_control.argtypes = [wintypes.LPVOID, ctypes.POINTER(wintypes.WORD), ctypes.POINTER(wintypes.DWORD)]
+        get_control.restype = wintypes.BOOL
+        with tempfile.TemporaryDirectory(prefix='skill ACL ') as tmp:
+            for update in [False, True]:
+                target = installer.install(ROOT, tmp, update=update)
+                for path in [target, target / 'SKILL.md', target / 'scripts' / 'open_reader.py']:
+                    needed = wintypes.DWORD()
+                    get_security(str(path), 4, None, 0, ctypes.byref(needed))
+                    self.assertGreater(needed.value, 0)
+                    buffer = ctypes.create_string_buffer(needed.value)
+                    self.assertTrue(get_security(str(path), 4, buffer, len(buffer), ctypes.byref(needed)))
+                    control, revision = wintypes.WORD(), wintypes.DWORD()
+                    self.assertTrue(get_control(buffer, ctypes.byref(control), ctypes.byref(revision)))
+                    self.assertFalse(control.value & 0x1000, str(path))  # SE_DACL_PROTECTED
+
+
 if __name__ == "__main__":
     unittest.main()

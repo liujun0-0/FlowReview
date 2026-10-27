@@ -20,3 +20,24 @@ test('unknown implementations, duplicate step ids and broken business edges cann
  assert.throws(()=>resolveBusinessFlow({...base,links:[{from:'entry',to:'missing'}]},new Map([['h1','n1']])),/未知步骤/);
  assert.throws(()=>resolveBusinessFlow({...base,steps:[{...step('entry','h1','modified'),change:{status:'modified'}}]},new Map([['h1','n1']])),/前后行为/);
 });
+
+test('request and result examples retain content and evidence; missing evidence cannot become a real example',()=>{
+ const example={title:'请求',content:'{"name":"sample"}',language:'json',evidence:'ApiTest.java:20'};
+ const input={source:{...source,requestExamples:[example],responseExamples:[{...example,title:'响应',content:'{"accepted":true}'}]},steps:[step('entry','h1')],links:[]};
+ const resolved=resolveBusinessFlow(input,new Map([['h1','n1']]));
+ assert.deepEqual(resolved.source.requestExamples,[example]);
+ assert.equal(resolved.source.responseExamples[0].content,'{"accepted":true}');
+ assert.throws(()=>resolveBusinessFlow({...input,source:{...source,requestExamples:[{...example,evidence:''}]}},new Map([['h1','n1']])),/示例/);
+ assert.throws(()=>resolveBusinessFlow({...input,source:{...source,responseExamples:{content:'invented'}}},new Map([['h1','n1']])),/示例/);
+});
+
+test('multiple entry anchors resolve to snapshot ids and reject duplicate or foreign entry references',()=>{
+ const entry={id:'read',title:'读取',entry:'GET /read',implementationId:'h1',evidence:'Api.java:1',requestExamples:[{title:'请求',content:'GET /read?id=1',evidence:'Api.java:1'}]};
+ const journey={source,steps:[step('entry','h1')],links:[],entries:[entry]};
+ const anchors=new Map([['h1','n1']]);
+ assert.equal(resolveBusinessFlow(journey,anchors).entries[0].implementationId,'n1');
+ assert.equal(journey.entries[0].implementationId,'h1');
+ assert.throws(()=>resolveBusinessFlow({...journey,entries:[entry,entry]},anchors),/重复/);
+ assert.throws(()=>resolveBusinessFlow({...journey,entries:[{...entry,implementationId:'foreign'}]},anchors),/未知实现/);
+ assert.throws(()=>resolveBusinessFlow({...journey,entries:[{...entry,responseExamples:[{title:'无依据',content:'{}'}]}]},anchors),/示例/);
+});

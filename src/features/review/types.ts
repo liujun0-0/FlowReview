@@ -33,4 +33,6 @@ export interface BusinessStep {
  branches:string[];tables:string[];downstreams:string[];implementationIds:string[];evidence:string[];
  change:{status:'unchanged'|'modified'|'added'|'deleted'|'unknown';kind?:'behavior'|'implementation';before:string;after:string;reason:string;impact:string[]};
 }
-export interface BusinessJourney {source:{actor:string;entry:string;input:string;purpose:string;outcome:string};coverage:{status:string;boundaries:string[]};steps:BusinessStep[];links:{from:string;to:string;label:string;kind?:string;confidence?:string;evidence:string}[]}
+export interface BoundaryExample {title:string;content:string;language?:string;evidence:string;description?:string}
+export interface JourneyEntry {id:string;title:string;implementationId:string;entry:string;actor?:string;input?:string;purpose?:string;outcome?:string;evidence:string;requestExamples?:BoundaryExample[];responseExamples?:BoundaryExample[];inferred?:boolean}
+export interface BusinessJourney {entries?:JourneyEntry[];source:{actor:string;entry:string;input:string;purpose:string;outcome:string;requestExamples?:BoundaryExample[];responseExamples?:BoundaryExample[]};coverage:{status:string;boundaries:string[]};steps:BusinessStep[];links:{from:string;to:string;label:string;kind?:string;confidence?:string;evidence:string}[]}

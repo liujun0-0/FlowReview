@@ -5,11 +5,11 @@
 需要单文件 HTML、离线旧版或结构/覆盖校验时，继续使用下列原有渲染器：
 
 ```powershell
-python scripts/render.py review.json --repo /path/to/repository -o review.html
+python scripts/render.py review.json --repo /path/to/repository --legacy-html -o review.html
 python scripts/render.py review.json --repo /path/to/repository --range main...HEAD --summary
 python scripts/render.py review.json --validate
 python scripts/render.py review.json --repo /path/to/repository --validate --strict
-python scripts/render.py examples/review.example.json --no-git -o demo.html
+python scripts/render.py examples/review.example.json --no-git --legacy-html -o demo.html
 ```
 
 有 `repositories` 时在各项目 scope 指定范围，不传全局 `--repo/--range`。

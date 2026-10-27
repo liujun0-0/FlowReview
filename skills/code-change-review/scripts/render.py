@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-把 AI 产出的变更评审 JSON 渲染成一个自包含的交互式 HTML。
+旧版单文件 HTML 渲染器；默认报告请使用 open_reader.py。仅用户明确要求旧版 HTML 时启用 --legacy-html。
 
 用法:
-    python render.py review.json -o review.html            # 渲染（自动从 git 取真实代码）
-    python render.py review.json -o out.html --open        # 渲染完自动打开
+    python render.py review.json --legacy-html -o review.html            # 渲染（自动从 git 取真实代码）
+    python render.py review.json --legacy-html -o out.html --open        # 渲染完自动打开
     python render.py review.json --repo D:\\workspace --range main..HEAD
     python render.py review.json --summary                 # 输出轻量 markdown 摘要，不生成 HTML
     python render.py review.json --validate                # 只做结构校验
-    python render.py --demo -o demo.html                   # 生成示例页（离线，不调 git）
+    python render.py --demo --legacy-html -o demo.html                   # 生成示例页（离线，不调 git）
 
 设计要点:
   - 代码块默认**从 git 原地取**（ground truth），JSON 只需给「文件 + 行号」引用。
@@ -1506,6 +1506,7 @@ def main():
     ap = argparse.ArgumentParser(description="把变更评审 JSON 渲染成交互式 HTML")
     ap.add_argument("json", nargs="?", help="评审 JSON 文件")
     ap.add_argument("-o", "--out", default="review.html", help="输出 HTML 路径")
+    ap.add_argument("--legacy-html", action="store_true", help="显式生成用户要求的旧版单文件 HTML；默认报告使用 open_reader.py")
     ap.add_argument("--demo", action="store_true", help="生成示例页（离线）")
     ap.add_argument("--open", action="store_true", help="渲染完自动打开")
     ap.add_argument("--summary", action="store_true", help="输出轻量 markdown 摘要到 stdout，不写 HTML")
@@ -1515,6 +1516,8 @@ def main():
     ap.add_argument("--strict", action="store_true", help="拒绝警告、取码未定位、覆盖缺口或离线预览（与 --validate 合用时也查 Git）")
     ap.add_argument("--no-git", action="store_true", help="不从 git 取代码，只用 JSON 里自带的 code[]")
     a = ap.parse_args()
+    if not (a.legacy_html or a.validate or a.summary):
+        ap.error('默认报告不生成 HTML。请运行同目录 open_reader.py review.json；只有用户明确要求旧版 HTML 时加 --legacy-html。')
 
     if a.demo:
         data = DEMO
