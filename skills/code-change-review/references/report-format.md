@@ -170,3 +170,7 @@ chain.links 表达谁调用谁、条件/异步/跨服务边界；from/to 是本�
 两个入口可以在同一 chain 的 hops 中共用同一方法，且以实际 `chains[].links` 分别连接。跨 chain 复用需要准确定位同一方法；不要伪造执行先后。业务主干仍由 `journey.steps/links` 描述，方法调用边仍需逐跳证据，循环与异常写在方法 process/branches。没有追清的实现保留 coverage.boundaries，不用关联顺序冒充调用。
 
 旧报告没有 entries 时，工具只从已采集的 endpoint 方法分别建立入口候选，沿确定且有证据的方法关系追踪；不会拆解 `/page|filters|detail` 文本猜接口，也不会将功能总体 outcome 当成各接口返回。未关联的方法保留在功能目录，并提示数量。旧报告补全时应核对源码后添加 entries 与缺失方法链接。
+
+### 示例采集完整性（3.6.3）
+
+存在 journey.entries 时，请求与响应示例均存到对应 entry，不回退到功能总 source。每个方向提供有 title/content/evidence 的示例，或填写 exampleGaps: {"request":"具体缺失原因","response":"具体缺失原因"}；缺一方向时只填该方向原因。按 Controller 参数绑定、DTO 继承/字段、响应包装和序列化核对；可从契约构造去标识示意值并注明非实测。只核对 DTO 时，标题明确“DTO 片段，非完整 HTTP 响应”；不能编造 code/data/result 包装或拿别的接口的例子复用。无请求体也提供实际 HTTP 方法和 URL 的请求示例。

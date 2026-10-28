@@ -33,12 +33,23 @@ def inspect_business(flow, nodes, required=False):
     if not isinstance(entries, list):
         report('journey.entries 必须为数组', True)
         entries = []
+    def check_examples(owner, identity):
+        gaps = owner.get('exampleGaps', {})
+        for field, key in (('requestExamples', 'request'), ('responseExamples', 'response')):
+            values = owner.get(field, [])
+            if not isinstance(values, list) or any(not isinstance(v, dict) or any(not isinstance(v.get(k), str) or not v[k].strip() for k in ('title', 'content', 'evidence')) for v in values):
+                report('接口示例格式错误或缺少依据：' + field, True, entry=identity)
+            elif not values and not (isinstance(gaps, dict) and isinstance(gaps.get(key), str) and gaps[key].strip()):
+                report('接口示例缺失且未说明原因：' + field, required, entry=identity)
+    if not entries and any(nodes.get(ref, {}).get('endpoint') for ref in local_ids):
+        check_examples(source, 'journey.source')
     entry_ids = set()
     for entry in entries:
         if not isinstance(entry, dict):
             report('接口入口必须为对象', True)
             continue
         identity = entry.get('id')
+        check_examples(entry, identity)
         if not isinstance(identity, str) or not identity.strip() or identity in entry_ids:
             report('接口入口 id 缺失或重复', True)
         else:
@@ -50,6 +61,8 @@ def inspect_business(flow, nodes, required=False):
         ref = entry.get('implementationId')
         if not isinstance(ref, str) or ref not in local_ids or ref not in nodes or nodes[ref].get('rangeKind') != 'method':
             report('接口入口必须引用本功能已定位的方法节点', True, entry=identity)
+    if required and '|' in str(source.get('entry', '')) and len(entries) < 2:
+        report('多个 URL 被拼成单一入口；需要逐接口定位并填写 journey.entries', True)
     endpoint_ids = {ref for ref in local_ids if nodes.get(ref, {}).get('endpoint')}
     if required and len(endpoint_ids) > 1 and not entries:
         report('多个接口需要 journey.entries 分别说明入口、参数、用途和结果', True)

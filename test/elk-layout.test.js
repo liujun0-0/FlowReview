@@ -11,3 +11,14 @@ test('edge labels use distance midpoint for straight, bent and degenerate routes
  assert.deepEqual(routeMidpoint([{x:10,y:10},{x:10,y:10}]),{x:10,y:10});
  assert.equal(routeMidpoint([]),undefined);
 });
+
+test('entry boundaries stay left and results right regardless of input order, projects, branches or expanded height',async()=>{
+ const node=(id,project,height=260)=>({id,project,width:300,height,ports:[{id:'out',y:120}]});
+ const nodes=[node('core','core',1400),node('api','api'),node('boundary:result:one','结果'),node('boundary:entry:two','入口'),node('boundary:entry:one','入口')];
+ const edges=[['boundary:entry:one','api'],['boundary:entry:two','core'],['api','core'],['api','boundary:result:one']].map(([source,target],i)=>({id:String(i),source,target,sourceHandle:'out'}));
+ for(const values of [nodes,[...nodes].reverse()]){
+  const layout=await layoutReviewGraph(values,edges),byId=new Map(layout.nodes.map(n=>[n.id,n]));
+  for(const id of ['boundary:entry:one','boundary:entry:two'])assert.ok(byId.get(id).x+300<Math.min(byId.get('api').x,byId.get('core').x));
+  assert.ok(byId.get('boundary:result:one').x>Math.max(byId.get('api').x+300,byId.get('core').x+300));
+ }
+});

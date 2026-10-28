@@ -4,7 +4,7 @@ import type { Sources } from './types';
 
 const cache = new Map<string, Promise<Sources>>();
 const MAX_FILES = 24;
-function loadSource(fileId: string) {
+export function loadSource(fileId: string) {
   const key = `${reportId}:${fileId}`;
   let source = cache.get(key);
   if (source) { cache.delete(key); cache.set(key, source); return source; }

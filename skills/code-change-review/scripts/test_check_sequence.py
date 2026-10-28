@@ -72,12 +72,25 @@ class BusinessFlowTests(unittest.TestCase):
 class MultiEntryTests(unittest.TestCase):
     def test_entry_must_reference_local_method(self):
         data = fixture()
-        entry = dict(id='read', title='读取', entry='GET /read', implementationId='a', actor='用户', input='id', purpose='读取', outcome='数据', evidence='Api.java:1')
+        entry = dict(id='read', title='读取', entry='GET /read', implementationId='a', actor='用户', input='id', purpose='读取', outcome='数据', evidence='Api.java:1', exampleGaps=dict(request='测试未采集', response='测试未采集'))
         data['flows'][0]['journey']['entries'] = [entry]
         data['nodes']['a']['rangeKind'] = 'method'
         self.assertFalse(check_sequence.inspect_business(data['flows'][0], data['nodes'], True)[0])
         entry['implementationId'] = 'foreign'
         self.assertTrue(check_sequence.inspect_business(data['flows'][0], data['nodes'], True)[0])
+
+    def test_combined_url_text_cannot_replace_multiple_entry_metadata(self):
+        data = fixture()
+        data['flows'][0]['journey']['source']['entry'] = '/sample/page|filters'
+        self.assertTrue(check_sequence.inspect_business(data['flows'][0], data['nodes'], True)[0])
+
+    def test_examples_require_evidence_or_explicit_gap(self):
+        data = fixture()
+        data['nodes']['a']['endpoint'] = dict(method='GET', path='/read')
+        flow = data['flows'][0]
+        self.assertTrue(check_sequence.inspect_business(flow, data['nodes'], True)[0])
+        flow['journey']['source']['exampleGaps'] = dict(request='契约缺失', response='响应包装未采集')
+        self.assertFalse(check_sequence.inspect_business(flow, data['nodes'], True)[0])
 
     def test_multi_endpoint_new_reports_require_entries(self):
         data = fixture()

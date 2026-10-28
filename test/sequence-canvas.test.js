@@ -113,9 +113,9 @@ test('multiple entry chains share downstream once and keep independent boundarie
  const {buildFunctionCanvas,flow,nodes,files}=await multiFixture();
  const graph=buildFunctionCanvas(flow,nodes,files);
  assert.equal(graph.items.filter(n=>n.kind==='boundary').length,4);
- assert.equal(graph.items.filter(n=>n.id==='method-summary:b').length,1);
- assert.equal(graph.edges.filter(e=>e.target==='method-summary:b').length,2);
- assert.match(graph.items.find(n=>n.id==='method-summary:b').detail,/公共下游/);
+ assert.equal(graph.items.filter(n=>n.id==='b').length,1);
+ assert.equal(graph.edges.filter(e=>e.target==='b').length,2);
+ assert.match(graph.items.find(n=>n.id==='b').detail,/公共下游/);
  assert.equal(graph.items.find(n=>n.id==='boundary:result:two').description,'第二接口结果');
  assert.equal(flow.chains.length,1);
 });
@@ -124,6 +124,7 @@ test('entry filtering excludes sibling path but retains shared methods and exact
  const graph=buildFunctionCanvas(flow,nodes,files,new Set(['api','core']),()=>true,'one');
  assert.deepEqual(graph.sequence.methods.map(m=>m.id),['a','b']);
  assert.ok(!graph.items.some(n=>n.entryId==='two'));
+ assert.ok(!graph.items.some(n=>n.id==='c'||n.id==='unlinked:c'));
  assert.equal(graph.edges.find(e=>e.source==='a'&&e.target==='b').sourceHandle,'call:0');
  assert.ok(graph.edges.some(e=>e.source==='a'&&e.target==='boundary:result:one'&&e.sourceHandle==='out'));
 });
@@ -132,7 +133,7 @@ test('legacy endpoints split by actual method anchors without inventing results 
  flow.chains[0].links[1].confidence='猜';
  const graph=buildFunctionCanvas(flow,nodes,files,new Set(),()=>true,'c');
  assert.deepEqual(graph.sequence.methods.map(m=>m.id),['c']);
- assert.ok(graph.items.some(n=>n.id==='unlinked:b'));
+ assert.ok(!graph.items.some(n=>n.id==='b'||n.id==='unlinked:b'));
  assert.ok(!graph.edges.some(e=>e.target.startsWith('unlinked:')));
  assert.ok(!graph.edges.some(e=>e.target.startsWith('boundary:result:')));
  assert.match(graph.items.find(n=>n.id==='boundary:result:c').description,/尚未/);
@@ -144,4 +145,40 @@ test('cycles remain finite and hidden entry methods do not create dangling edges
  assert.equal(graph.sequence.methods.length,2);
  const ids=new Set(graph.items.map(n=>n.id));
  assert.ok(graph.edges.every(e=>ids.has(e.source)&&ids.has(e.target)));
+});
+
+test('expanding one method never expands sibling endpoints in the same project and keeps stable identity',async()=>{
+ const {buildFunctionCanvas,flow,nodes,files}=await multiFixture();
+ const before=buildFunctionCanvas(flow,nodes,files),after=buildFunctionCanvas(flow,nodes,files,new Set(['method:a']));
+ assert.equal(after.items.find(n=>n.id==='a').kind,'method');
+ assert.equal(after.items.find(n=>n.id==='c').kind,'summary');
+ assert.equal(after.items.find(n=>n.id==='b').kind,'summary');
+ assert.deepEqual(before.items.map(n=>n.id),after.items.map(n=>n.id));
+ assert.ok(after.edges.some(e=>e.source==='a'&&e.target==='b'&&e.sourceHandle==='call:0'));
+});
+
+test('single HTTP entry replaces summaries in place instead of adding a second project chain',async()=>{
+ const {buildFunctionCanvas,flow,nodes,files}=await functionFixture();
+ nodes.a.endpoint={method:'POST',path:'/read',evidence:'A.java:1'};
+ flow.journey.source.requestExamples=[{title:'请求',content:'POST /read',evidence:'A.java:1'}];
+ const collapsed=buildFunctionCanvas(flow,nodes,files);
+ const expanded=buildFunctionCanvas(flow,nodes,files,new Set(['method:a']));
+ assert.equal(collapsed.items.find(n=>n.id==='a').kind,'summary');
+ assert.equal(expanded.items.find(n=>n.id==='a').kind,'method');
+ assert.ok(!expanded.items.some(n=>n.id.startsWith('summary:')));
+ assert.equal(expanded.items.filter(n=>n.id==='a').length,1);
+ assert.deepEqual(collapsed.edges.map(e=>[e.source,e.target]),expanded.edges.map(e=>[e.source,e.target]));
+ assert.equal(expanded.edges.find(e=>e.source==='a'&&e.target==='b').sourceHandle,'call:0');
+ assert.equal(expanded.items.find(n=>n.boundaryKind==='result').description,'返回数据');
+ assert.equal(expanded.entries[0].requestExamples[0].content,'POST /read');
+});
+
+test('unlocated trigger with no business steps still shows collected same-project method calls',async()=>{
+ const {buildFunctionCanvas,flow,nodes,files}=await functionFixture();
+ files.b.project='api';flow.journey.steps=[];flow.journey.links=[];flow.journey.source.entry='既有模板同步保存入口';
+ const collapsed=buildFunctionCanvas(flow,nodes,files),expanded=buildFunctionCanvas(flow,nodes,files,new Set(['method:a']));
+ assert.equal(collapsed.items.filter(n=>n.kind==='summary').length,2);
+ assert.ok(!collapsed.items.some(n=>n.kind==='boundary'));
+ for(const graph of [collapsed,expanded])assert.ok(graph.edges.some(e=>e.source==='a'&&e.target==='b'));
+ assert.equal(expanded.items.find(n=>n.id==='a').kind,'method');assert.equal(expanded.items.find(n=>n.id==='b').kind,'summary');
 });

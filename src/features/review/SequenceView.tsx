@@ -11,7 +11,7 @@ import type { Flow, Manifest } from './types';
 
 type Props={flow:Flow;manifest:Manifest;include:(id:string)=>boolean;selected:string;onSelect:(fileId:string,nodeId:string,stepId?:string)=>void};
 type Binding=ReturnType<typeof bindProcessCalls>;
-type Data={flowKey:string;method?:SequenceMethod;object?:SequenceObject;binding?:Binding;expandOld:boolean;open:(id:string)=>void;project?:string};
+type Data={collapse?:()=>void;flowKey:string;method?:SequenceMethod;object?:SequenceObject;binding?:Binding;expandOld:boolean;open:(id:string)=>void;project?:string};
 type ReviewNode=Node<Data,'method'|'object'|'project'>;
 function Output({id}:{id:string}) {return <Handle type="source" position={Position.Right} id={id} isConnectable={false} className="rr-rf-port"/>;}
 function Target(){return <Handle type="target" position={Position.Left} id="in" isConnectable={false} style={{top:30}}/>;}
@@ -21,18 +21,18 @@ const MethodNode=memo(function MethodNode({id,data,selected}:NodeProps<ReviewNod
  useEffect(()=>{const el=root.current;if(!el)return;const changed=()=>update(id);el.addEventListener('toggle',changed,true);return()=>el.removeEventListener('toggle',changed,true);},[id,update]);
  useLayoutEffect(()=>{update(id);},[id,data,update]);
  const processLabel=(step:ProcessStep,path:string):ReactNode=>{const indexes=binding.bindings[path]||[];
-  if(indexes.length===1){const i=indexes[0],c=m.calls[i];return <div className="rr-rf-reference"><button data-call={`${m.id}-${i}`} className="rr-seq-step-target rr-canvas-step-anchor nodrag" onClick={()=>data.open(c.to)} title={`${c.label}：${c.evidence}`}>{step.text} ↗</button><Output id={`call:${i}`}/></div>;}
+  if(indexes.length===1){const i=indexes[0],c=m.calls[i];return <div className="rr-rf-reference"><button data-call={`${m.id}-${i}`} className="rr-seq-step-target rr-canvas-step-anchor" onClick={()=>data.open(c.to)} title={`${c.label}：${c.evidence}`}>{step.text} ↗</button><Output id={`call:${i}`}/></div>;}
   return <div className="rr-seq-execution-label">{splitProcessReferences(step.text,indexes,m.calls).map((p,i)=>p.index===undefined?<span key={i}>{p.text}</span>:<span className="rr-rf-inline" key={i}><button className="rr-canvas-inline-ref nodrag" data-call={`${m.id}-${p.index}`} onClick={()=>data.open(m.calls[p.index!].to)} title={m.calls[p.index].evidence}>{p.text}</button><Output id={`call:${p.index}`}/></span>)}</div>;
  };
  const process=(steps:ProcessStep[],prefix=''):ReactNode=><ol className="rr-seq-execution">{steps.map((s,i)=>{const path=prefix?`${prefix}.${i}`:String(i);return <li key={path} className={s.children.length?'rr-seq-execution-group':''}>{processLabel(s,path)}{s.children.length>0&&process(s.children,path)}</li>;})}</ol>;
  return <article ref={root} data-canvas-id={id} data-method={id} className={`rr-canvas-node rr-seq-method rr-seq-${m.status} ${selected?'rr-seq-selected':''} nopan`}>
- <Target/><Output id="out"/><div className="rr-canvas-grip" aria-label={`拖动 ${m.title}`}>⠿ 拖动</div>
- <button className="rr-seq-methodhead nodrag" onClick={()=>data.open(m.id)}><span className={`rr-status rr-status-${m.status}`}>{STATUS_LABELS[m.status]}</span><strong>{m.owner.replace(/\.java$/,'')}.{m.title}()</strong><small>{m.project} · L{m.range?.join('–')||'未定位'} · 看完整方法 ↗</small></button>
+ <Target/><Output id="out"/>{data.collapse&&<button className="nodrag" onClick={data.collapse}>收起此方法流程</button>}<div className="rr-canvas-grip" aria-label={`拖动 ${m.title}`}>⠿ 拖动</div>
+ <button className="rr-seq-methodhead" onClick={()=>data.open(m.id)}><span className={`rr-status rr-status-${m.status}`}>{STATUS_LABELS[m.status]}</span><strong>{m.owner.replace(/\.java$/,'')}.{m.title}()</strong><small>{m.project} · L{m.range?.join('–')||'未定位'} · 看完整方法 ↗</small></button>
  {m.objects.length>0&&<div className="rr-seq-object-refs">{m.objects.map(o=><div key={o.fileId} className="rr-rf-reference"><button className="nodrag" data-object-ref={`${m.id}-${o.fileId}`} onClick={()=>data.open(o.id)}>引用对象 → {o.name}<small>L{o.line} · 对象源码</small></button><Output id={`object:${o.fileId}`}/></div>)}</div>}
  {m.endpoint&&<div className="rr-endpoint">{m.endpoint.method} {m.endpoint.path}</div>}{m.step&&<p className="rr-seq-business">{m.step.title}</p>}<p><b>功能：</b>{m.role}</p>
- {m.status!=='unchanged'&&<details className="rr-canvas-change nodrag"><summary>变化：{m.change}</summary><p>{m.change}</p><p>{m.annotations[0]?.why||'报告未说明，需核对'}</p></details>}
+ {m.status!=='unchanged'&&<details className="rr-canvas-change"><summary className="nodrag">变化：{m.change}</summary><p>{m.change}</p><p>{m.annotations[0]?.why||'报告未说明，需核对'}</p></details>}
  <section className="rr-seq-process" aria-label={`${m.title} 的执行流程`}><b>执行流程</b>{m.processSteps.length?process(m.processSteps):<p className="rr-warning">报告未描述执行流程，需核对源码。</p>}</section>
- {(m.status!=='unchanged'||data.expandOld)&&m.branches.length>0&&<details className="nodrag"><summary>分支 / 异常</summary>{[...new Set(m.branches)].map((b,i)=><p key={i}>{b}</p>)}</details>}
+ {(m.status!=='unchanged'||data.expandOld)&&m.branches.length>0&&<details><summary className="nodrag">分支 / 异常</summary>{[...new Set(m.branches)].map((b,i)=><p key={i}>{b}</p>)}</details>}
  {binding.unbound.length>0&&<details className="rr-canvas-unbound nodrag"><summary className="rr-rf-reference">未定位到执行步骤的关系（{binding.unbound.length}）{binding.unbound.map(i=><Output id={`call:${i}`} key={i}/>)}</summary>{binding.unbound.map(i=>{const c=m.calls[i];return <p key={i}><button onClick={()=>data.open(c.to)}>{c.target?.owner}.{c.target?.title}() ↗</button><small>{c.label} · 执行位置待核对</small></p>;})}</details>}
  </article>;
 });
